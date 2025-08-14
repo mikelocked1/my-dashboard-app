@@ -49,15 +49,15 @@ const HeartRateChart: React.FC = () => {
         data: chartData,
         borderColor: '#D97706',
         backgroundColor: function(context: any) {
-          const value = context.parsed.y;
-          if (value < 60 || value > 100) {
+          const value = context.parsed?.y || context.raw;
+          if (value && (value < 60 || value > 100)) {
             return 'rgba(220, 38, 38, 0.1)'; // Red for bad readings
           }
           return 'rgba(5, 150, 105, 0.1)'; // Green for good readings
         },
         pointBackgroundColor: function(context: any) {
-          const value = context.parsed.y;
-          if (value < 60 || value > 100) {
+          const value = context.parsed?.y || context.raw;
+          if (value && (value < 60 || value > 100)) {
             return '#DC2626'; // Red for bad readings
           }
           return '#059669'; // Green for good readings
@@ -125,10 +125,10 @@ const HeartRateChart: React.FC = () => {
             Heart Rate Trends
           </CardTitle>
           <div className="flex space-x-2">
-            <Badge className="bg-success/10 text-success border-success/20">
+            <Badge className="bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
               Good: 60-100 BPM
             </Badge>
-            <Badge className="bg-accent/10 text-accent border-accent/20">
+            <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
               Alert: &lt;60 or &gt;100
             </Badge>
           </div>
