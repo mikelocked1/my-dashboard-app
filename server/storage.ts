@@ -35,6 +35,9 @@ export interface IStorage {
   getDoctorsBySpecialty(specialty: string): Promise<(Doctor & { user: User })[]>;
   createDoctor(doctor: InsertDoctor): Promise<Doctor>;
   updateDoctor(id: number, doctor: Partial<InsertDoctor>): Promise<Doctor | undefined>;
+  getDoctorByUserId(userId: number): Promise<(Doctor & { user: User }) | undefined>;
+  getApprovedDoctors(): Promise<(Doctor & { user: User })[]>;
+  seedPreloadedDoctors(): Promise<void>;
 
   // Health Data
   getHealthDataByUser(userId: number, limit?: number): Promise<HealthData[]>;
@@ -167,6 +170,158 @@ export class DatabaseStorage implements IStorage {
   async updateDoctor(id: number, doctor: Partial<InsertDoctor>): Promise<Doctor | undefined> {
     const result = await db.update(doctors).set({ ...doctor, updatedAt: new Date() }).where(eq(doctors.id, id)).returning();
     return result[0] || undefined;
+  }
+
+  async getDoctorByUserId(userId: number): Promise<(Doctor & { user: User }) | undefined> {
+    try {
+      const result = await db
+        .select()
+        .from(doctors)
+        .leftJoin(users, eq(doctors.userId, users.id))
+        .where(eq(doctors.userId, userId))
+        .limit(1);
+      
+      if (!Array.isArray(result) || result.length === 0) {
+        return undefined;
+      }
+      
+      if (result[0]) {
+        return {
+          ...result[0].doctors,
+          user: result[0].users!
+        };
+      }
+      return undefined;
+    } catch (error) {
+      console.error('Error in getDoctorByUserId:', error);
+      return undefined;
+    }
+  }
+
+  async getApprovedDoctors(): Promise<(Doctor & { user: User })[]> {
+    try {
+      const result = await db
+        .select()
+        .from(doctors)
+        .leftJoin(users, eq(doctors.userId, users.id))
+        .where(and(eq(doctors.status, "approved"), eq(doctors.isAvailable, true)));
+      
+      if (!Array.isArray(result)) {
+        return [];
+      }
+      
+      return result.map((row: any) => ({
+        ...row.doctors,
+        user: row.users!
+      }));
+    } catch (error) {
+      console.error('Error in getApprovedDoctors:', error);
+      return [];
+    }
+  }
+
+  async seedPreloadedDoctors(): Promise<void> {
+    try {
+      // Check if preloaded doctors already exist
+      const existingDoctors = await this.getDoctors();
+      if (existingDoctors.length > 0) {
+        return; // Preloaded doctors already exist
+      }
+
+      console.log('Seeding preloaded doctors...');
+
+      const preloadedDoctors = [
+        {
+          user: {
+            firebaseUid: 'dr-sarah-wilson-001',
+            email: 'dr.sarah.wilson@smartcare.com',
+            name: 'Dr. Sarah Wilson',
+            role: 'doctor' as const,
+          },
+          doctor: {
+            specialty: 'Cardiology',
+            experience: 15,
+            consultationFee: '150.00',
+            bio: 'Dr. Sarah Wilson is a board-certified cardiologist with over 15 years of experience treating heart conditions. She specializes in preventive cardiology and heart disease management.',
+            education: ['MD from Harvard Medical School', 'Residency at Johns Hopkins', 'Fellowship in Cardiology at Mayo Clinic'],
+            languages: ['English', 'Spanish'],
+            status: 'approved' as const,
+            isAvailable: true,
+          }
+        },
+        {
+          user: {
+            firebaseUid: 'dr-michael-chen-002',
+            email: 'dr.michael.chen@smartcare.com',
+            name: 'Dr. Michael Chen',
+            role: 'doctor' as const,
+          },
+          doctor: {
+            specialty: 'Internal Medicine',
+            experience: 12,
+            consultationFee: '120.00',
+            bio: 'Dr. Michael Chen is an experienced internal medicine physician focusing on comprehensive primary care and chronic disease management.',
+            education: ['MD from Stanford University', 'Residency at UCSF Medical Center'],
+            languages: ['English', 'Mandarin', 'Cantonese'],
+            status: 'approved' as const,
+            isAvailable: true,
+          }
+        },
+        {
+          user: {
+            firebaseUid: 'dr-emily-rodriguez-003',
+            email: 'dr.emily.rodriguez@smartcare.com',
+            name: 'Dr. Emily Rodriguez',
+            role: 'doctor' as const,
+          },
+          doctor: {
+            specialty: 'Pediatrics',
+            experience: 10,
+            consultationFee: '130.00',
+            bio: 'Dr. Emily Rodriguez is a dedicated pediatrician with extensive experience in child healthcare, vaccinations, and developmental assessments.',
+            education: ['MD from UCLA School of Medicine', 'Residency at Children\'s Hospital Los Angeles'],
+            languages: ['English', 'Spanish'],
+            status: 'approved' as const,
+            isAvailable: true,
+          }
+        },
+        {
+          user: {
+            firebaseUid: 'dr-james-thompson-004',
+            email: 'dr.james.thompson@smartcare.com',
+            name: 'Dr. James Thompson',
+            role: 'doctor' as const,
+          },
+          doctor: {
+            specialty: 'Dermatology',
+            experience: 8,
+            consultationFee: '140.00',
+            bio: 'Dr. James Thompson specializes in medical and cosmetic dermatology, treating various skin conditions and providing comprehensive skin care.',
+            education: ['MD from Northwestern University', 'Dermatology Residency at University of Pennsylvania'],
+            languages: ['English'],
+            status: 'approved' as const,
+            isAvailable: true,
+          }
+        }
+      ];
+
+      for (const preloadedDoctor of preloadedDoctors) {
+        // Create user first
+        const createdUser = await this.createUser(preloadedDoctor.user);
+        
+        // Then create doctor profile
+        await this.createDoctor({
+          ...preloadedDoctor.doctor,
+          userId: createdUser.id,
+          approvedAt: new Date(),
+          approvedBy: 1, // Assuming admin user with ID 1
+        });
+      }
+
+      console.log(`Successfully seeded ${preloadedDoctors.length} preloaded doctors`);
+    } catch (error) {
+      console.error('Error seeding preloaded doctors:', error);
+    }
   }
 
   // Health Data

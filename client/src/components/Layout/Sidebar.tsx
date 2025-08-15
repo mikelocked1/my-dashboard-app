@@ -18,56 +18,114 @@ const Sidebar: React.FC = () => {
   const [location] = useLocation();
   const { userProfile } = useAuth();
 
-  const navigationItems = [
-    {
-      href: "/dashboard",
-      icon: LayoutDashboard,
-      label: t("nav.dashboard"),
-      roles: ["user", "doctor", "admin"]
-    },
-    {
-      href: "/health-analytics",
-      icon: TrendingUp,
-      label: t("nav.health_analytics"),
-      roles: ["user", "doctor", "admin"]
-    },
-    {
-      href: "/health-data-entry",
-      icon: Activity,
-      label: "Health Data Entry",
-      roles: ["user", "doctor", "admin"]
-    },
-    {
-      href: "/appointments",
-      icon: Calendar,
-      label: t("nav.appointments"),
-      roles: ["user", "doctor", "admin"]
-    },
-    {
-      href: "/patients",
-      icon: Users,
-      label: t("nav.patients"),
-      roles: ["doctor", "admin"]
-    },
-    {
-      href: "/reports",
-      icon: FileText,
-      label: t("nav.reports"),
-      roles: ["user", "doctor", "admin"]
-    },
-    {
-      href: "/admin",
-      icon: Shield,
-      label: "Admin Panel",
-      roles: ["admin"]
-    },
-    {
-      href: "/settings",
-      icon: Settings,
-      label: t("nav.settings"),
-      roles: ["user", "doctor", "admin"]
-    },
-  ];
+  // Dynamic navigation items based on user role
+  const getNavigationItems = () => {
+    const role = userProfile?.role || "user";
+    
+    const baseItems = [
+      {
+        href: "/settings",
+        icon: Settings,
+        label: t("nav.settings"),
+        roles: ["user", "doctor", "admin"]
+      },
+    ];
+
+    if (role === "doctor") {
+      return [
+        {
+          href: "/doctor-dashboard",
+          icon: LayoutDashboard,
+          label: "Doctor Dashboard",
+          roles: ["doctor"]
+        },
+        {
+          href: "/appointments",
+          icon: Calendar,
+          label: "My Appointments",
+          roles: ["doctor"]
+        },
+        {
+          href: "/patients",
+          icon: Users,
+          label: "My Patients",
+          roles: ["doctor"]
+        },
+        {
+          href: "/reports",
+          icon: FileText,
+          label: "Patient Reports",
+          roles: ["doctor"]
+        },
+        ...baseItems
+      ];
+    } else if (role === "admin") {
+      return [
+        {
+          href: "/admin",
+          icon: Shield,
+          label: "Admin Panel",
+          roles: ["admin"]
+        },
+        {
+          href: "/dashboard",
+          icon: LayoutDashboard,
+          label: t("nav.dashboard"),
+          roles: ["admin"]
+        },
+        {
+          href: "/appointments",
+          icon: Calendar,
+          label: t("nav.appointments"),
+          roles: ["admin"]
+        },
+        {
+          href: "/reports",
+          icon: FileText,
+          label: t("nav.reports"),
+          roles: ["admin"]
+        },
+        ...baseItems
+      ];
+    } else {
+      // Patient/user navigation
+      return [
+        {
+          href: "/dashboard",
+          icon: LayoutDashboard,
+          label: t("nav.dashboard"),
+          roles: ["user"]
+        },
+        {
+          href: "/health-analytics",
+          icon: TrendingUp,
+          label: t("nav.health_analytics"),
+          roles: ["user"]
+        },
+        {
+          href: "/health-data-entry",
+          icon: Activity,
+          label: "Health Data Entry",
+          roles: ["user"]
+        },
+        {
+          href: "/appointments",
+          icon: Calendar,
+          label: t("nav.appointments"),
+          roles: ["user"]
+        },
+        {
+          href: "/reports",
+          icon: FileText,
+          label: t("nav.reports"),
+          roles: ["user"]
+        },
+        ...baseItems
+      ];
+    }
+  };
+
+  const navigationItems = getNavigationItems();
 
   const filteredNavigation = navigationItems.filter(item => 
     item.roles.includes(userProfile?.role || "user")

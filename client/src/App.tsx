@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
+import DoctorDashboard from "@/pages/DoctorDashboard";
 import HealthAnalytics from "@/pages/HealthAnalytics";
 import HealthDataEntry from "@/pages/HealthDataEntry";
 import Appointments from "@/pages/Appointments";
@@ -51,19 +52,42 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Helper function to get dashboard route based on user role
+function getDashboardRoute(userProfile: any) {
+  if (!userProfile) return "/dashboard";
+  
+  switch (userProfile.role) {
+    case "doctor":
+      return "/doctor-dashboard";
+    case "admin":
+      return "/admin";
+    case "user":
+    default:
+      return "/dashboard";
+  }
+}
+
 function Router() {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   
   return (
     <Switch>
       <Route path="/login">
-        {currentUser ? <Redirect to="/dashboard" /> : <Login />}
+        {currentUser ? <Redirect to={getDashboardRoute(userProfile)} /> : <Login />}
       </Route>
       
       <Route path="/dashboard">
         <ProtectedRoute>
           <AppLayout>
             <Dashboard />
+          </AppLayout>
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/doctor-dashboard">
+        <ProtectedRoute>
+          <AppLayout>
+            <DoctorDashboard />
           </AppLayout>
         </ProtectedRoute>
       </Route>
@@ -125,7 +149,7 @@ function Router() {
       </Route>
       
       <Route path="/">
-        {currentUser ? <Redirect to="/dashboard" /> : <Redirect to="/login" />}
+        {currentUser ? <Redirect to={getDashboardRoute(userProfile)} /> : <Redirect to="/login" />}
       </Route>
       
       {/* Fallback to 404 */}

@@ -30,6 +30,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userData = insertUserSchema.parse(req.body);
       const user = await storage.createUser(userData);
+      
+      // If user registered as a doctor, create doctor profile with pending status
+      if (userData.role === "doctor") {
+        const defaultDoctorData = {
+          userId: user.id,
+          specialty: "General Practice", // Default, will be updated during profile completion
+          experience: 0,
+          consultationFee: "0.00",
+          bio: "",
+          education: [],
+          languages: ["English"],
+          status: "pending" as const,
+          isAvailable: false, // Not available until approved
+        };
+        
+        await storage.createDoctor(defaultDoctorData);
+      }
+      
       res.status(201).json(user);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -62,11 +80,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/doctors", async (req, res) => {
     try {
       const specialty = req.query.specialty as string;
+      const approvedOnly = req.query.approved !== "false"; // Default to approved only
       let doctors;
-      if (specialty) {
-        doctors = await storage.getDoctorsBySpecialty(specialty);
+      
+      if (approvedOnly) {
+        if (specialty) {
+          doctors = await storage.getDoctorsBySpecialty(specialty);
+          doctors = doctors.filter(doctor => doctor.status === "approved");
+        } else {
+          doctors = await storage.getApprovedDoctors();
+        }
       } else {
-        doctors = await storage.getDoctors();
+        if (specialty) {
+          doctors = await storage.getDoctorsBySpecialty(specialty);
+        } else {
+          doctors = await storage.getDoctors();
+        }
       }
       res.json(doctors);
     } catch (error) {
@@ -99,6 +128,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid doctor data", details: error.errors });
       }
       console.error("Error creating doctor:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/doctors/approved", async (req, res) => {
+    try {
+      const doctors = await storage.getApprovedDoctors();
+      res.json(doctors);
+    } catch (error) {
+      console.error("Error fetching approved doctors:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/doctors/user/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const doctor = await storage.getDoctorByUserId(userId);
+      if (!doctor) {
+        return res.status(404).json({ error: "Doctor profile not found" });
+      }
+      res.json(doctor);
+    } catch (error) {
+      console.error("Error fetching doctor by user ID:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/doctors/:id/approve", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { approvedBy } = req.body;
+      
+      const doctor = await storage.updateDoctor(id, {
+        status: "approved",
+        approvedBy: approvedBy,
+        approvedAt: new Date(),
+      });
+      
+      if (!doctor) {
+        return res.status(404).json({ error: "Doctor not found" });
+      }
+      res.json(doctor);
+    } catch (error) {
+      console.error("Error approving doctor:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/doctors/:id/reject", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { rejectionReason } = req.body;
+      
+      const doctor = await storage.updateDoctor(id, {
+        status: "rejected",
+        rejectionReason: rejectionReason,
+      });
+      
+      if (!doctor) {
+        return res.status(404).json({ error: "Doctor not found" });
+      }
+      res.json(doctor);
+    } catch (error) {
+      console.error("Error rejecting doctor:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
