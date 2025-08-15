@@ -224,10 +224,9 @@ export class DatabaseStorage implements IStorage {
 
   async getUpcomingAppointments(userId: number, isDoctor: boolean = false): Promise<any[]> {
     const now = new Date();
-    let query;
     
     if (isDoctor) {
-      query = db
+      const result = await db
         .select()
         .from(appointments)
         .leftJoin(users, eq(appointments.patientId, users.id))
@@ -235,9 +234,16 @@ export class DatabaseStorage implements IStorage {
           eq(appointments.doctorId, userId),
           gte(appointments.appointmentDate, now),
           sql`${appointments.status} IN ('scheduled', 'confirmed')`
-        ));
+        ))
+        .orderBy(appointments.appointmentDate)
+        .limit(10);
+      
+      return result.map(row => ({
+        ...row.appointments,
+        patient: row.users
+      }));
     } else {
-      query = db
+      const result = await db
         .select()
         .from(appointments)
         .leftJoin(doctors, eq(appointments.doctorId, doctors.id))
@@ -246,15 +252,15 @@ export class DatabaseStorage implements IStorage {
           eq(appointments.patientId, userId),
           gte(appointments.appointmentDate, now),
           sql`${appointments.status} IN ('scheduled', 'confirmed')`
-        ));
+        ))
+        .orderBy(appointments.appointmentDate)
+        .limit(10);
+      
+      return result.map(row => ({
+        ...row.appointments,
+        doctor: row.doctors && row.users ? { ...row.doctors, user: row.users } : null
+      }));
     }
-    
-    const result = await query.orderBy(appointments.appointmentDate).limit(10);
-    
-    return result.map(row => ({
-      ...row.appointments,
-      ...(isDoctor ? { patient: row.users } : { doctor: row.doctors && row.users ? { ...row.doctors, user: row.users } : null })
-    }));
   }
 
   async createAppointment(appointment: InsertAppointment): Promise<Appointment> {
