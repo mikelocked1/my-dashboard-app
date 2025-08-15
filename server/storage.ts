@@ -90,46 +90,73 @@ export class DatabaseStorage implements IStorage {
 
   // Doctors
   async getDoctors(): Promise<(Doctor & { user: User })[]> {
-    const result = await db
-      .select()
-      .from(doctors)
-      .leftJoin(users, eq(doctors.userId, users.id))
-      .where(eq(doctors.isAvailable, true));
-    
-    return result.map((row: any) => ({
-      ...row.doctors,
-      user: row.users!
-    }));
+    try {
+      const result = await db
+        .select()
+        .from(doctors)
+        .leftJoin(users, eq(doctors.userId, users.id))
+        .where(eq(doctors.isAvailable, true));
+      
+      if (!Array.isArray(result)) {
+        return [];
+      }
+      
+      return result.map((row: any) => ({
+        ...row.doctors,
+        user: row.users!
+      }));
+    } catch (error) {
+      console.error('Error in getDoctors:', error);
+      return [];
+    }
   }
 
   async getDoctorById(id: number): Promise<(Doctor & { user: User }) | undefined> {
-    const result = await db
-      .select()
-      .from(doctors)
-      .leftJoin(users, eq(doctors.userId, users.id))
-      .where(eq(doctors.id, id))
-      .limit(1);
-    
-    if (result[0]) {
-      return {
-        ...result[0].doctors,
-        user: result[0].users!
-      };
+    try {
+      const result = await db
+        .select()
+        .from(doctors)
+        .leftJoin(users, eq(doctors.userId, users.id))
+        .where(eq(doctors.id, id))
+        .limit(1);
+      
+      if (!Array.isArray(result) || result.length === 0) {
+        return undefined;
+      }
+      
+      if (result[0]) {
+        return {
+          ...result[0].doctors,
+          user: result[0].users!
+        };
+      }
+      return undefined;
+    } catch (error) {
+      console.error('Error in getDoctorById:', error);
+      return undefined;
     }
-    return undefined;
   }
 
   async getDoctorsBySpecialty(specialty: string): Promise<(Doctor & { user: User })[]> {
-    const result = await db
-      .select()
-      .from(doctors)
-      .leftJoin(users, eq(doctors.userId, users.id))
-      .where(and(eq(doctors.specialty, specialty), eq(doctors.isAvailable, true)));
-    
-    return result.map((row: any) => ({
-      ...row.doctors,
-      user: row.users!
-    }));
+    try {
+      const result = await db
+        .select()
+        .from(doctors)
+        .leftJoin(users, eq(doctors.userId, users.id))
+        .where(and(eq(doctors.specialty, specialty), eq(doctors.isAvailable, true)));
+      
+      if (!Array.isArray(result)) {
+        return [];
+      }
+      
+      return result.map((row: any) => ({
+        ...row.doctors,
+        user: row.users!
+      }));
+    } catch (error) {
+      console.error('Error in getDoctorsBySpecialty:', error);
+      return [];
+    }
   }
 
   async createDoctor(doctor: InsertDoctor): Promise<Doctor> {
@@ -144,29 +171,43 @@ export class DatabaseStorage implements IStorage {
 
   // Health Data
   async getHealthDataByUser(userId: number, limit: number = 50): Promise<HealthData[]> {
-    return await db
-      .select()
-      .from(healthData)
-      .where(eq(healthData.userId, userId))
-      .orderBy(desc(healthData.timestamp))
-      .limit(limit);
+    try {
+      const result = await db
+        .select()
+        .from(healthData)
+        .where(eq(healthData.userId, userId))
+        .orderBy(desc(healthData.timestamp))
+        .limit(limit);
+      
+      return Array.isArray(result) ? result : [];
+    } catch (error) {
+      console.error('Error in getHealthDataByUser:', error);
+      return [];
+    }
   }
 
   async getHealthDataByType(userId: number, type: string, startDate?: Date, endDate?: Date): Promise<HealthData[]> {
-    const conditions = [eq(healthData.userId, userId), eq(healthData.type, type as any)];
-    
-    if (startDate) {
-      conditions.push(gte(healthData.timestamp, startDate.toISOString()));
-    }
-    if (endDate) {
-      conditions.push(lte(healthData.timestamp, endDate.toISOString()));
-    }
+    try {
+      const conditions = [eq(healthData.userId, userId), eq(healthData.type, type as any)];
+      
+      if (startDate) {
+        conditions.push(gte(healthData.timestamp, startDate.toISOString()));
+      }
+      if (endDate) {
+        conditions.push(lte(healthData.timestamp, endDate.toISOString()));
+      }
 
-    return await db
-      .select()
-      .from(healthData)
-      .where(and(...conditions))
-      .orderBy(desc(healthData.timestamp));
+      const result = await db
+        .select()
+        .from(healthData)
+        .where(and(...conditions))
+        .orderBy(desc(healthData.timestamp));
+      
+      return Array.isArray(result) ? result : [];
+    } catch (error) {
+      console.error('Error in getHealthDataByType:', error);
+      return [];
+    }
   }
 
   async createHealthData(data: InsertHealthData): Promise<HealthData> {
@@ -191,75 +232,106 @@ export class DatabaseStorage implements IStorage {
 
   // Appointments
   async getAppointmentsByPatient(patientId: number): Promise<(Appointment & { doctor: Doctor & { user: User } })[]> {
-    const result = await db
-      .select()
-      .from(appointments)
-      .leftJoin(doctors, eq(appointments.doctorId, doctors.id))
-      .leftJoin(users, eq(doctors.userId, users.id))
-      .where(eq(appointments.patientId, patientId))
-      .orderBy(desc(appointments.appointmentDate));
-
-    return result.map((row: any) => ({
-      ...row.appointments,
-      doctor: {
-        ...row.doctors!,
-        user: row.users!
-      }
-    }));
-  }
-
-  async getAppointmentsByDoctor(doctorId: number): Promise<(Appointment & { patient: User })[]> {
-    const result = await db
-      .select()
-      .from(appointments)
-      .leftJoin(users, eq(appointments.patientId, users.id))
-      .where(eq(appointments.doctorId, doctorId))
-      .orderBy(desc(appointments.appointmentDate));
-
-    return result.map((row: any) => ({
-      ...row.appointments,
-      patient: row.users!
-    }));
-  }
-
-  async getUpcomingAppointments(userId: number, isDoctor: boolean = false): Promise<any[]> {
-    const now = new Date();
-    
-    if (isDoctor) {
-      const result = await db
-        .select()
-        .from(appointments)
-        .leftJoin(users, eq(appointments.patientId, users.id))
-        .where(and(
-          eq(appointments.doctorId, userId),
-          gte(appointments.appointmentDate, now),
-          sql`${appointments.status} IN ('scheduled', 'confirmed')`
-        ))
-        .orderBy(appointments.appointmentDate)
-        .limit(10);
-      
-      return result.map((row: any) => ({
-        ...row.appointments,
-        patient: row.users
-      }));
-    } else {
+    try {
       const result = await db
         .select()
         .from(appointments)
         .leftJoin(doctors, eq(appointments.doctorId, doctors.id))
         .leftJoin(users, eq(doctors.userId, users.id))
-        .where(and(
-          eq(appointments.patientId, userId),
-          gte(appointments.appointmentDate, now),
-          sql`${appointments.status} IN ('scheduled', 'confirmed')`
-        ))
-        .orderBy(appointments.appointmentDate)
-        .limit(10);
-      
+        .where(eq(appointments.patientId, patientId))
+        .orderBy(desc(appointments.appointmentDate));
+
+      if (!Array.isArray(result)) {
+        return [];
+      }
+
       return result.map((row: any) => ({
         ...row.appointments,
-        doctor: row.doctors && row.users ? { ...row.doctors, user: row.users } : null
+        doctor: {
+          ...row.doctors!,
+          user: row.users!
+        }
       }));
+    } catch (error) {
+      console.error('Error in getAppointmentsByPatient:', error);
+      return [];
+    }
+  }
+
+  async getAppointmentsByDoctor(doctorId: number): Promise<(Appointment & { patient: User })[]> {
+    try {
+      const result = await db
+        .select()
+        .from(appointments)
+        .leftJoin(users, eq(appointments.patientId, users.id))
+        .where(eq(appointments.doctorId, doctorId))
+        .orderBy(desc(appointments.appointmentDate));
+
+      if (!Array.isArray(result)) {
+        return [];
+      }
+
+      return result.map((row: any) => ({
+        ...row.appointments,
+        patient: row.users!
+      }));
+    } catch (error) {
+      console.error('Error in getAppointmentsByDoctor:', error);
+      return [];
+    }
+  }
+
+  async getUpcomingAppointments(userId: number, isDoctor: boolean = false): Promise<any[]> {
+    try {
+      const now = new Date();
+      
+      if (isDoctor) {
+        const result = await db
+          .select()
+          .from(appointments)
+          .leftJoin(users, eq(appointments.patientId, users.id))
+          .where(and(
+            eq(appointments.doctorId, userId),
+            gte(appointments.appointmentDate, now),
+            sql`${appointments.status} IN ('scheduled', 'confirmed')`
+          ))
+          .orderBy(appointments.appointmentDate)
+          .limit(10);
+        
+        if (!Array.isArray(result)) {
+          return [];
+        }
+        
+        return result.map((row: any) => ({
+          ...row.appointments,
+          patient: row.users
+        }));
+      } else {
+        const result = await db
+          .select()
+          .from(appointments)
+          .leftJoin(doctors, eq(appointments.doctorId, doctors.id))
+          .leftJoin(users, eq(doctors.userId, users.id))
+          .where(and(
+            eq(appointments.patientId, userId),
+            gte(appointments.appointmentDate, now),
+            sql`${appointments.status} IN ('scheduled', 'confirmed')`
+          ))
+          .orderBy(appointments.appointmentDate)
+          .limit(10);
+        
+        if (!Array.isArray(result)) {
+          return [];
+        }
+        
+        return result.map((row: any) => ({
+          ...row.appointments,
+          doctor: row.doctors && row.users ? { ...row.doctors, user: row.users } : null
+        }));
+      }
+    } catch (error) {
+      console.error('Error in getUpcomingAppointments:', error);
+      return [];
     }
   }
 
@@ -275,12 +347,19 @@ export class DatabaseStorage implements IStorage {
 
   // Health Alerts
   async getHealthAlerts(userId: number, limit: number = 20): Promise<HealthAlert[]> {
-    return await db
-      .select()
-      .from(healthAlerts)
-      .where(eq(healthAlerts.userId, userId))
-      .orderBy(desc(healthAlerts.createdAt))
-      .limit(limit);
+    try {
+      const result = await db
+        .select()
+        .from(healthAlerts)
+        .where(eq(healthAlerts.userId, userId))
+        .orderBy(desc(healthAlerts.createdAt))
+        .limit(limit);
+      
+      return Array.isArray(result) ? result : [];
+    } catch (error) {
+      console.error('Error in getHealthAlerts:', error);
+      return [];
+    }
   }
 
   async createHealthAlert(alert: InsertHealthAlert): Promise<HealthAlert> {
@@ -295,12 +374,19 @@ export class DatabaseStorage implements IStorage {
 
   // AI Health Tips
   async getAiHealthTips(userId: number, limit: number = 10): Promise<AiHealthTip[]> {
-    return await db
-      .select()
-      .from(aiHealthTips)
-      .where(eq(aiHealthTips.userId, userId))
-      .orderBy(desc(aiHealthTips.createdAt))
-      .limit(limit);
+    try {
+      const result = await db
+        .select()
+        .from(aiHealthTips)
+        .where(eq(aiHealthTips.userId, userId))
+        .orderBy(desc(aiHealthTips.createdAt))
+        .limit(limit);
+      
+      return Array.isArray(result) ? result : [];
+    } catch (error) {
+      console.error('Error in getAiHealthTips:', error);
+      return [];
+    }
   }
 
   async createAiHealthTip(tip: InsertAiHealthTip): Promise<AiHealthTip> {

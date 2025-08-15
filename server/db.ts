@@ -1,10 +1,10 @@
 import * as schema from "@shared/schema";
 
-// Create a simple mock database for development when PostgreSQL is not available
+// Create a proper mock database for development when PostgreSQL is not available
 function createMockDatabase() {
   const memoryStore = {
     users: new Map(),
-    doctors: new Map(),
+    doctors: new Map(), 
     healthData: new Map(),
     appointments: new Map(),
     healthAlerts: new Map(),
@@ -17,12 +17,24 @@ function createMockDatabase() {
       from: (table: any) => ({
         where: (condition: any) => ({
           limit: (n: number) => [],
-          orderBy: (order: any) => []
+          orderBy: (order: any) => [],
+          leftJoin: (joinTable: any, condition: any) => ({
+            where: (condition: any) => ({
+              limit: (n: number) => [],
+              orderBy: (order: any) => []
+            }),
+            orderBy: (order: any) => ({
+              limit: (n: number) => []
+            })
+          })
         }),
         leftJoin: (joinTable: any, condition: any) => ({
           where: (condition: any) => ({
             limit: (n: number) => [],
             orderBy: (order: any) => []
+          }),
+          orderBy: (order: any) => ({
+            limit: (n: number) => []
           })
         }),
         orderBy: (order: any) => ({
