@@ -1,21 +1,21 @@
 import React from "react";
-import SimpleHealthAnalytics from "@/components/Health/SimpleHealthAnalytics";
+import HealthDataEntry from "@/components/Health/HealthDataEntry";
 
-const HealthAnalyticsPage: React.FC = () => {
+const HealthDataEntryPage: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Health Analytics
+          Health Data Entry
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Track your health metrics, view trends, and stay informed about your well-being.
+          Record your health metrics easily and securely.
         </p>
       </div>
       
-      <SimpleHealthAnalytics />
+      <HealthDataEntry />
     </div>
   );
 };
 
-export default HealthAnalyticsPage;
+export default HealthDataEntryPage;

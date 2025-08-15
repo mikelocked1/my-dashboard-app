@@ -7,7 +7,8 @@ import {
   Calendar, 
   Users, 
   FileText, 
-  Settings 
+  Settings,
+  Activity
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { t } from "@/lib/i18n";
@@ -27,6 +28,12 @@ const Sidebar: React.FC = () => {
       href: "/health-analytics",
       icon: TrendingUp,
       label: t("nav.health_analytics"),
+      roles: ["user", "doctor", "admin"]
+    },
+    {
+      href: "/health-data-entry",
+      icon: Activity,
+      label: "Health Data Entry",
       roles: ["user", "doctor", "admin"]
     },
     {

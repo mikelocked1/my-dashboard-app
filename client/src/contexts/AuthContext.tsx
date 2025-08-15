@@ -7,7 +7,7 @@ import {
   onAuthStateChanged
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { createUser, getUserByEmail } from "@/lib/firestore";
+import { apiRequest } from "@/lib/queryClient";
 import type { User } from "@shared/schema";
 
 interface AuthContextType {
@@ -41,12 +41,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (email: string, password: string, name: string, role: "user" | "doctor") => {
     const { user } = await createUserWithEmailAndPassword(auth, email, password);
     
-    // Create user profile in Firestore
-    await createUser({
-      email: user.email!,
-      name,
-      role,
-    });
+    // Create user profile in our database
+    try {
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firebaseUid: user.uid,
+          email: user.email!,
+          name,
+          role,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to create user profile");
+      }
+    } catch (error) {
+      console.error("Error creating user profile:", error);
+      throw error;
+    }
   };
 
   const logout = async () => {
@@ -58,9 +74,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentUser(user);
       
       if (user) {
-        // Get user profile from Firestore
-        const profile = await getUserByEmail(user.email!);
-        setUserProfile(profile);
+        try {
+          // Get user profile from our database
+          const response = await fetch(`/api/users/${user.uid}`);
+          if (response.ok) {
+            const profile = await response.json();
+            setUserProfile(profile);
+          } else if (response.status === 404) {
+            // If user doesn't exist in our database, create them
+            try {
+              const createResponse = await fetch("/api/users", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  firebaseUid: user.uid,
+                  email: user.email!,
+                  name: user.displayName || user.email!.split('@')[0],
+                  role: "user",
+                }),
+              });
+              
+              if (createResponse.ok) {
+                const newProfile = await createResponse.json();
+                setUserProfile(newProfile);
+              } else {
+                setUserProfile(null);
+              }
+            } catch (createError) {
+              console.error("Error creating user profile:", createError);
+              setUserProfile(null);
+            }
+          } else {
+            setUserProfile(null);
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+          setUserProfile(null);
+        }
       } else {
         setUserProfile(null);
       }

@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import HealthAnalytics from "@/pages/HealthAnalytics";
+import HealthDataEntry from "@/pages/HealthDataEntry";
 import Appointments from "@/pages/Appointments";
 import Reports from "@/pages/Reports";
 import DoctorPortal from "@/pages/DoctorPortal";
@@ -70,6 +71,14 @@ function Router() {
         <ProtectedRoute>
           <AppLayout>
             <HealthAnalytics />
+          </AppLayout>
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/health-data-entry">
+        <ProtectedRoute>
+          <AppLayout>
+            <HealthDataEntry />
           </AppLayout>
         </ProtectedRoute>
       </Route>
