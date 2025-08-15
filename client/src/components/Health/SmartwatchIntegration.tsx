@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Smartphone, CheckCircle } from "lucide-react";
+import { Smartphone, CheckCircle, Loader2, X } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,7 +18,8 @@ const SmartwatchIntegration: React.FC = () => {
   const { currentUser, userProfile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [connectedDevices, setConnectedDevices] = useState<string[]>(["apple_watch"]);
+  const [connectedDevices, setConnectedDevices] = useState<string[]>([]);
+  const [isConnecting, setIsConnecting] = useState<string | null>(null);
 
   // Mock smartwatch data - in real implementation, this would come from actual APIs
   const mockSmartwatchData: SmartwatchData = {
@@ -31,6 +32,10 @@ const SmartwatchIntegration: React.FC = () => {
     mutationFn: async (source: string) => {
       if (!userProfile?.id) {
         throw new Error("User profile not found. Please log in again.");
+      }
+
+      if (!connectedDevices.includes(source)) {
+        throw new Error("Device not connected. Please connect your device first.");
       }
 
       // Simulate API call delay
@@ -97,12 +102,50 @@ const SmartwatchIntegration: React.FC = () => {
     },
   });
 
-  const handleConnect = (device: string) => {
-    // Simulate connection process
-    setConnectedDevices(prev => [...prev, device]);
+  const handleConnect = async (device: string) => {
+    setIsConnecting(device);
+    
+    try {
+      // Simulate device connection process with proper steps
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      if (device === "apple_watch") {
+        // Simulate Apple HealthKit authorization request
+        if (typeof window !== 'undefined' && 'DeviceMotionEvent' in window) {
+          // Request permissions for health data access
+          toast({
+            title: "Authorization Required",
+            description: "Please allow SmartCare to access your Apple Health data.",
+          });
+          
+          // Simulate user approving permissions
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+      
+      // Add device to connected list
+      setConnectedDevices(prev => [...prev, device]);
+      setIsConnecting(null);
+      
+      toast({
+        title: "Device Connected Successfully",
+        description: `${device === "apple_watch" ? "Apple Watch" : device} is now connected and ready for data sync.`,
+      });
+    } catch (error) {
+      setIsConnecting(null);
+      toast({
+        title: "Connection Failed",
+        description: `Failed to connect to ${device}. Please try again.`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDisconnect = (device: string) => {
+    setConnectedDevices(prev => prev.filter(d => d !== device));
     toast({
-      title: "Device Connected",
-      description: `Successfully connected to ${device}.`,
+      title: "Device Disconnected",
+      description: `${device === "apple_watch" ? "Apple Watch" : device} has been disconnected.`,
     });
   };
 
@@ -160,7 +203,22 @@ const SmartwatchIntegration: React.FC = () => {
                     disabled={syncDataMutation.isPending}
                     className="bg-primary hover:bg-orange-600"
                   >
-                    {syncDataMutation.isPending ? "Syncing..." : "Sync Now"}
+                    {syncDataMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                        Syncing...
+                      </>
+                    ) : (
+                      "Sync Now"
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDisconnect(deviceId)}
+                    className="text-red-600 hover:bg-red-50 hover:border-red-300"
+                  >
+                    <X className="w-3 h-3" />
                   </Button>
                   <CheckCircle className="text-success w-5 h-5" />
                 </div>
@@ -169,8 +227,9 @@ const SmartwatchIntegration: React.FC = () => {
           })}
           
           {/* Available Integrations */}
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Available Integrations</h4>
+          {integrations.filter(i => !i.connected).length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Available Integrations</h4>
             
             {integrations.filter(i => !i.connected).map((integration) => (
               <div key={integration.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
@@ -184,14 +243,34 @@ const SmartwatchIntegration: React.FC = () => {
                   size="sm"
                   variant="outline"
                   onClick={() => handleConnect(integration.id)}
+                  disabled={isConnecting === integration.id}
                   className="text-xs border-primary text-primary hover:bg-primary hover:text-white"
                 >
-                  Connect
+                  {isConnecting === integration.id ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    "Connect"
+                  )}
                 </Button>
               </div>
             ))}
-          </div>
+            </div>
+          )}
           
+          {/* No Devices Connected Message */}
+          {connectedDevices.length === 0 && (
+            <div className="text-center py-8">
+              <Smartphone className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">No Devices Connected</h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Connect your smartwatch or fitness tracker to sync health data automatically
+              </p>
+            </div>
+          )}
+
           {/* Recent Sync Data */}
           {connectedDevices.length > 0 && (
             <div>
