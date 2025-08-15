@@ -96,7 +96,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(users, eq(doctors.userId, users.id))
       .where(eq(doctors.isAvailable, true));
     
-    return result.map(row => ({
+    return result.map((row: any) => ({
       ...row.doctors,
       user: row.users!
     }));
@@ -126,7 +126,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(users, eq(doctors.userId, users.id))
       .where(and(eq(doctors.specialty, specialty), eq(doctors.isAvailable, true)));
     
-    return result.map(row => ({
+    return result.map((row: any) => ({
       ...row.doctors,
       user: row.users!
     }));
@@ -156,10 +156,10 @@ export class DatabaseStorage implements IStorage {
     const conditions = [eq(healthData.userId, userId), eq(healthData.type, type as any)];
     
     if (startDate) {
-      conditions.push(gte(healthData.timestamp, startDate));
+      conditions.push(gte(healthData.timestamp, startDate.toISOString()));
     }
     if (endDate) {
-      conditions.push(lte(healthData.timestamp, endDate));
+      conditions.push(lte(healthData.timestamp, endDate.toISOString()));
     }
 
     return await db
@@ -199,7 +199,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(appointments.patientId, patientId))
       .orderBy(desc(appointments.appointmentDate));
 
-    return result.map(row => ({
+    return result.map((row: any) => ({
       ...row.appointments,
       doctor: {
         ...row.doctors!,
@@ -216,7 +216,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(appointments.doctorId, doctorId))
       .orderBy(desc(appointments.appointmentDate));
 
-    return result.map(row => ({
+    return result.map((row: any) => ({
       ...row.appointments,
       patient: row.users!
     }));
@@ -238,7 +238,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(appointments.appointmentDate)
         .limit(10);
       
-      return result.map(row => ({
+      return result.map((row: any) => ({
         ...row.appointments,
         patient: row.users
       }));
@@ -256,7 +256,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(appointments.appointmentDate)
         .limit(10);
       
-      return result.map(row => ({
+      return result.map((row: any) => ({
         ...row.appointments,
         doctor: row.doctors && row.users ? { ...row.doctors, user: row.users } : null
       }));
