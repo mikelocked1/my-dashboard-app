@@ -14,6 +14,7 @@ import Appointments from "@/pages/Appointments";
 import Reports from "@/pages/Reports";
 import DoctorPortal from "@/pages/DoctorPortal";
 import Settings from "@/pages/Settings";
+import AdminPanel from "@/pages/AdminPanel";
 import Header from "@/components/Layout/Header";
 import Sidebar from "@/components/Layout/Sidebar";
 
@@ -111,6 +112,14 @@ function Router() {
         <ProtectedRoute>
           <AppLayout>
             <Settings />
+          </AppLayout>
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/admin">
+        <ProtectedRoute>
+          <AppLayout>
+            <AdminPanel />
           </AppLayout>
         </ProtectedRoute>
       </Route>

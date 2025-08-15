@@ -8,7 +8,8 @@ import {
   Users, 
   FileText, 
   Settings,
-  Activity
+  Activity,
+  Shield
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { t } from "@/lib/i18n";
@@ -53,6 +54,12 @@ const Sidebar: React.FC = () => {
       icon: FileText,
       label: t("nav.reports"),
       roles: ["user", "doctor", "admin"]
+    },
+    {
+      href: "/admin",
+      icon: Shield,
+      label: "Admin Panel",
+      roles: ["admin"]
     },
     {
       href: "/settings",

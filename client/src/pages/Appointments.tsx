@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import DoctorSelection from "@/components/Booking/DoctorSelection";
 import { 
@@ -60,6 +61,8 @@ const statusIcons = {
 
 const AppointmentsPage: React.FC = () => {
   const { userProfile } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("upcoming");
   const [showBooking, setShowBooking] = useState(false);
 
@@ -96,6 +99,37 @@ const AppointmentsPage: React.FC = () => {
       apt.status === 'completed' || 
       apt.status === 'cancelled'
     ) || [];
+  };
+
+  // Cancel appointment mutation
+  const cancelAppointmentMutation = useMutation({
+    mutationFn: async (appointmentId: number) => {
+      return apiRequest(`/api/appointments/${appointmentId}`, {
+        method: "PUT",
+        body: JSON.stringify({ status: "cancelled" }),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Appointment Cancelled",
+        description: "Your appointment has been cancelled successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/patient"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/upcoming"] });
+    },
+    onError: () => {
+      toast({
+        title: "Cancellation Failed",
+        description: "There was an error cancelling your appointment. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCancelAppointment = (appointmentId: number) => {
+    if (window.confirm("Are you sure you want to cancel this appointment?")) {
+      cancelAppointmentMutation.mutate(appointmentId);
+    }
   };
 
   if (showBooking) {
@@ -260,10 +294,21 @@ const AppointmentsPage: React.FC = () => {
                           ${appointment.consultationFee}
                         </div>
                         <div className="space-x-2">
-                          {appointment.status === 'scheduled' && (
-                            <Button variant="outline" size="sm">
-                              Reschedule
-                            </Button>
+                          {(appointment.status === 'scheduled' || appointment.status === 'confirmed') && (
+                            <>
+                              <Button variant="outline" size="sm">
+                                Reschedule
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleCancelAppointment(appointment.id)}
+                                disabled={cancelAppointmentMutation.isPending}
+                                className="text-red-600 hover:text-red-700 hover:border-red-300"
+                              >
+                                {cancelAppointmentMutation.isPending ? "Cancelling..." : "Cancel"}
+                              </Button>
+                            </>
                           )}
                           {appointment.isVideoCall && appointment.status === 'confirmed' && (
                             <Button size="sm">
