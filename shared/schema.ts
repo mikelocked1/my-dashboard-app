@@ -43,6 +43,10 @@ export const doctors = pgTable("doctors", {
   education: text("education").array(),
   languages: text("languages").array().default(["English"]),
   isAvailable: boolean("is_available").default(true),
+  status: text("status", { enum: ["pending", "approved", "rejected"] }).default("pending").notNull(),
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  rejectionReason: text("rejection_reason"),
   workingHours: jsonb("working_hours").default({
     monday: { start: "09:00", end: "17:00", available: true },
     tuesday: { start: "09:00", end: "17:00", available: true },
