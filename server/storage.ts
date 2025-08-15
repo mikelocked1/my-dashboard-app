@@ -637,4 +637,371 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+// In-memory storage implementation for development
+export class MemoryStorage implements IStorage {
+  private users: Map<number, User> = new Map();
+  private doctors: Map<number, Doctor> = new Map();
+  private healthData: Map<number, HealthData> = new Map();
+  private appointments: Map<number, Appointment> = new Map();
+  private healthAlerts: Map<number, HealthAlert> = new Map();
+  private aiHealthTips: Map<number, AiHealthTip> = new Map();
+  private nextId = 1;
+
+  // Users
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.firebaseUid === firebaseUid);
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.email === email);
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
+    const user: User = {
+      id: this.nextId++,
+      ...userData,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.set(user.id, user);
+    return user;
+  }
+
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const existing = this.users.get(id);
+    if (!existing) return undefined;
+    
+    const updated: User = {
+      ...existing,
+      ...userData,
+      updatedAt: new Date(),
+    };
+    this.users.set(id, updated);
+    return updated;
+  }
+
+  // Doctors
+  async getDoctors(): Promise<(Doctor & { user: User })[]> {
+    const result: (Doctor & { user: User })[] = [];
+    
+    for (const doctor of this.doctors.values()) {
+      const user = this.users.get(doctor.userId);
+      if (user) {
+        result.push({ ...doctor, user });
+      }
+    }
+    
+    return result;
+  }
+
+  async getDoctorById(id: number): Promise<(Doctor & { user: User }) | undefined> {
+    const doctor = this.doctors.get(id);
+    if (!doctor) return undefined;
+    
+    const user = this.users.get(doctor.userId);
+    if (!user) return undefined;
+    
+    return { ...doctor, user };
+  }
+
+  async getDoctorsBySpecialty(specialty: string): Promise<(Doctor & { user: User })[]> {
+    const allDoctors = await this.getDoctors();
+    return allDoctors.filter(doctor => doctor.specialty === specialty);
+  }
+
+  async createDoctor(doctorData: InsertDoctor): Promise<Doctor> {
+    const doctor: Doctor = {
+      id: this.nextId++,
+      ...doctorData,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.doctors.set(doctor.id, doctor);
+    return doctor;
+  }
+
+  async updateDoctor(id: number, doctorData: Partial<InsertDoctor>): Promise<Doctor | undefined> {
+    const existing = this.doctors.get(id);
+    if (!existing) return undefined;
+    
+    const updated: Doctor = {
+      ...existing,
+      ...doctorData,
+      updatedAt: new Date(),
+    };
+    this.doctors.set(id, updated);
+    return updated;
+  }
+
+  async getDoctorByUserId(userId: number): Promise<(Doctor & { user: User }) | undefined> {
+    const doctor = Array.from(this.doctors.values()).find(d => d.userId === userId);
+    if (!doctor) return undefined;
+    
+    const user = this.users.get(doctor.userId);
+    if (!user) return undefined;
+    
+    return { ...doctor, user };
+  }
+
+  async getApprovedDoctors(): Promise<(Doctor & { user: User })[]> {
+    const allDoctors = await this.getDoctors();
+    return allDoctors.filter(doctor => doctor.status === 'approved');
+  }
+
+  async seedPreloadedDoctors(): Promise<void> {
+    // Check if doctors already exist
+    const existingDoctors = await this.getDoctors();
+    if (existingDoctors.length > 0) {
+      return;
+    }
+
+    console.log('Seeding preloaded doctors...');
+
+    const preloadedDoctors = [
+      {
+        user: {
+          firebaseUid: 'dr-sarah-wilson-001',
+          email: 'dr.sarah.wilson@smartcare.com',
+          name: 'Dr. Sarah Wilson',
+          role: 'doctor' as const,
+        },
+        doctor: {
+          specialty: 'Cardiology',
+          experience: 15,
+          consultationFee: '150.00',
+          bio: 'Dr. Sarah Wilson is a board-certified cardiologist with over 15 years of experience treating heart conditions.',
+          education: ['MD from Harvard Medical School', 'Residency at Johns Hopkins'],
+          languages: ['English', 'Spanish'],
+          status: 'approved' as const,
+          isAvailable: true,
+        }
+      },
+      {
+        user: {
+          firebaseUid: 'dr-michael-chen-002',
+          email: 'dr.michael.chen@smartcare.com',
+          name: 'Dr. Michael Chen',
+          role: 'doctor' as const,
+        },
+        doctor: {
+          specialty: 'Internal Medicine',
+          experience: 12,
+          consultationFee: '120.00',
+          bio: 'Dr. Michael Chen is an experienced internal medicine physician.',
+          education: ['MD from Stanford University', 'Residency at UCSF Medical Center'],
+          languages: ['English', 'Mandarin'],
+          status: 'approved' as const,
+          isAvailable: true,
+        }
+      },
+      {
+        user: {
+          firebaseUid: 'dr-emily-rodriguez-003',
+          email: 'dr.emily.rodriguez@smartcare.com',
+          name: 'Dr. Emily Rodriguez',
+          role: 'doctor' as const,
+        },
+        doctor: {
+          specialty: 'Dermatology',
+          experience: 8,
+          consultationFee: '130.00',
+          bio: 'Dr. Emily Rodriguez specializes in dermatology and skin care treatments.',
+          education: ['MD from UCLA Medical School', 'Dermatology Residency at UCSF'],
+          languages: ['English', 'Spanish'],
+          status: 'approved' as const,
+          isAvailable: true,
+        }
+      },
+      {
+        user: {
+          firebaseUid: 'dr-james-thompson-004',
+          email: 'dr.james.thompson@smartcare.com',
+          name: 'Dr. James Thompson',
+          role: 'doctor' as const,
+        },
+        doctor: {
+          specialty: 'Pediatrics',
+          experience: 10,
+          consultationFee: '110.00',
+          bio: 'Dr. James Thompson is a dedicated pediatrician with extensive experience in child healthcare.',
+          education: ['MD from Johns Hopkins', 'Pediatric Residency at Children\'s Hospital'],
+          languages: ['English'],
+          status: 'approved' as const,
+          isAvailable: true,
+        }
+      }
+    ];
+
+    // Create users and doctors
+    for (const { user: userData, doctor: doctorData } of preloadedDoctors) {
+      const user = await this.createUser(userData);
+      await this.createDoctor({
+        userId: user.id,
+        ...doctorData,
+      });
+    }
+
+    console.log('Successfully seeded 4 preloaded doctors');
+  }
+
+  // Remaining methods with basic implementations
+  async getHealthDataByUser(userId: number, limit = 50): Promise<HealthData[]> {
+    return Array.from(this.healthData.values())
+      .filter(data => data.userId === userId)
+      .slice(0, limit);
+  }
+
+  async getHealthDataByType(userId: number, type: string, startDate?: Date, endDate?: Date): Promise<HealthData[]> {
+    return Array.from(this.healthData.values())
+      .filter(data => data.userId === userId && data.type === type);
+  }
+
+  async createHealthData(data: InsertHealthData): Promise<HealthData> {
+    const healthData: HealthData = {
+      id: this.nextId++,
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.healthData.set(healthData.id, healthData);
+    return healthData;
+  }
+
+  async updateHealthData(id: number, data: Partial<InsertHealthData>): Promise<HealthData | undefined> {
+    const existing = this.healthData.get(id);
+    if (!existing) return undefined;
+    
+    const updated: HealthData = {
+      ...existing,
+      ...data,
+      updatedAt: new Date(),
+    };
+    this.healthData.set(id, updated);
+    return updated;
+  }
+
+  async deleteHealthData(id: number): Promise<boolean> {
+    return this.healthData.delete(id);
+  }
+
+  async getAppointmentsByPatient(patientId: number): Promise<(Appointment & { doctor: Doctor & { user: User } })[]> {
+    const result: (Appointment & { doctor: Doctor & { user: User } })[] = [];
+    
+    for (const appointment of this.appointments.values()) {
+      if (appointment.patientId === patientId) {
+        const doctor = await this.getDoctorById(appointment.doctorId);
+        if (doctor) {
+          result.push({ ...appointment, doctor });
+        }
+      }
+    }
+    
+    return result;
+  }
+
+  async getAppointmentsByDoctor(doctorId: number): Promise<(Appointment & { patient: User })[]> {
+    const result: (Appointment & { patient: User })[] = [];
+    
+    for (const appointment of this.appointments.values()) {
+      if (appointment.doctorId === doctorId) {
+        const patient = this.users.get(appointment.patientId);
+        if (patient) {
+          result.push({ ...appointment, patient });
+        }
+      }
+    }
+    
+    return result;
+  }
+
+  async getUpcomingAppointments(userId: number, isDoctor = false): Promise<any[]> {
+    if (isDoctor) {
+      return this.getAppointmentsByDoctor(userId);
+    } else {
+      return this.getAppointmentsByPatient(userId);
+    }
+  }
+
+  async createAppointment(appointmentData: InsertAppointment): Promise<Appointment> {
+    const appointment: Appointment = {
+      id: this.nextId++,
+      ...appointmentData,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.appointments.set(appointment.id, appointment);
+    return appointment;
+  }
+
+  async updateAppointment(id: number, appointmentData: Partial<InsertAppointment>): Promise<Appointment | undefined> {
+    const existing = this.appointments.get(id);
+    if (!existing) return undefined;
+    
+    const updated: Appointment = {
+      ...existing,
+      ...appointmentData,
+      updatedAt: new Date(),
+    };
+    this.appointments.set(id, updated);
+    return updated;
+  }
+
+  async getHealthAlerts(userId: number, limit = 10): Promise<HealthAlert[]> {
+    return Array.from(this.healthAlerts.values())
+      .filter(alert => alert.userId === userId)
+      .slice(0, limit);
+  }
+
+  async createHealthAlert(alertData: InsertHealthAlert): Promise<HealthAlert> {
+    const alert: HealthAlert = {
+      id: this.nextId++,
+      ...alertData,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.healthAlerts.set(alert.id, alert);
+    return alert;
+  }
+
+  async markAlertAsRead(id: number): Promise<boolean> {
+    const alert = this.healthAlerts.get(id);
+    if (!alert) return false;
+    
+    const updated = { ...alert, isRead: true, updatedAt: new Date() };
+    this.healthAlerts.set(id, updated);
+    return true;
+  }
+
+  async getAiHealthTips(userId: number, limit = 5): Promise<AiHealthTip[]> {
+    return Array.from(this.aiHealthTips.values())
+      .filter(tip => tip.userId === userId)
+      .slice(0, limit);
+  }
+
+  async createAiHealthTip(tipData: InsertAiHealthTip): Promise<AiHealthTip> {
+    const tip: AiHealthTip = {
+      id: this.nextId++,
+      ...tipData,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.aiHealthTips.set(tip.id, tip);
+    return tip;
+  }
+
+  async markTipAsRead(id: number): Promise<boolean> {
+    const tip = this.aiHealthTips.get(id);
+    if (!tip) return false;
+    
+    const updated = { ...tip, isRead: true, updatedAt: new Date() };
+    this.aiHealthTips.set(id, updated);
+    return true;
+  }
+}
+
+// Use appropriate storage based on environment
+export const storage = process.env.DATABASE_URL ? new DatabaseStorage() : new MemoryStorage();
