@@ -29,46 +29,50 @@ const SmartwatchIntegration: React.FC = () => {
 
   const syncDataMutation = useMutation({
     mutationFn: async (source: string) => {
+      if (!userProfile?.id) {
+        throw new Error("User profile not found. Please log in again.");
+      }
+
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // In real implementation, this would fetch data from the actual smartwatch APIs
       const data = mockSmartwatchData;
-      const timestamp = new Date();
+      const timestamp = new Date().toISOString();
 
       // Create multiple health data entries
       const promises = [
         apiRequest("/api/health-data", {
           method: "POST",
           body: JSON.stringify({
-            userId: userProfile?.id!,
+            userId: userProfile.id,
             type: "steps",
             value: data.steps.toString(),
             unit: "steps",
-            timestamp: new Date(),
-            source: source,
+            timestamp: timestamp,
+            source: source === "apple_watch" ? "apple_health" : source,
           }),
         }),
         apiRequest("/api/health-data", {
           method: "POST",
           body: JSON.stringify({
-            userId: userProfile?.id!,
+            userId: userProfile.id,
             type: "heart_rate",
             value: data.heartRate.toString(),
             unit: "BPM",
-            timestamp: new Date(),
-            source: source,
+            timestamp: timestamp,
+            source: source === "apple_watch" ? "apple_health" : source,
           }),
         }),
         apiRequest("/api/health-data", {
           method: "POST",
           body: JSON.stringify({
-            userId: userProfile?.id!,
+            userId: userProfile.id,
             type: "sleep",
             value: data.sleep.toString(),
             unit: "hours",
-            timestamp: new Date(),
-            source: source,
+            timestamp: timestamp,
+            source: source === "apple_watch" ? "apple_health" : source,
           }),
         }),
       ];
@@ -83,10 +87,11 @@ const SmartwatchIntegration: React.FC = () => {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/health-data"] });
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error("Smartwatch sync error:", error);
       toast({
         title: "Sync Failed",
-        description: "There was an error syncing your smartwatch data.",
+        description: error.message || "There was an error syncing your smartwatch data.",
         variant: "destructive",
       });
     },
