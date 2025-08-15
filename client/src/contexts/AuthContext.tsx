@@ -1,10 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { mockAuth, type MockUser } from "@/lib/mockAuth";
+import { 
+  User as FirebaseUser, 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { apiRequest } from "@/lib/queryClient";
 import type { User } from "@shared/schema";
 
 interface AuthContextType {
-  currentUser: MockUser | null;
+  currentUser: FirebaseUser | null;
   userProfile: User | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string, role: "user" | "doctor") => Promise<void>;
@@ -23,16 +30,16 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<MockUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const login = async (email: string, password: string) => {
-    await mockAuth.signInWithEmailAndPassword(email, password);
+    await signInWithEmailAndPassword(auth, email, password);
   };
 
   const register = async (email: string, password: string, name: string, role: "user" | "doctor") => {
-    const { user } = await mockAuth.createUserWithEmailAndPassword(email, password);
+    const { user } = await createUserWithEmailAndPassword(auth, email, password);
     
     // Create user profile in our database
     try {
@@ -59,11 +66,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    await mockAuth.signOut();
+    await signOut(auth);
   };
 
   useEffect(() => {
-    const unsubscribe = mockAuth.onAuthStateChanged((user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       
       if (user) {
