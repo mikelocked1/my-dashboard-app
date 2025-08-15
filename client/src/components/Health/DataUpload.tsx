@@ -6,13 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Upload } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createHealthData } from "@/lib/firestore";
+import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { parseCSV } from "@/utils/csvParser";
 
 const DataUpload: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -21,7 +21,10 @@ const DataUpload: React.FC = () => {
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
   const createHealthDataMutation = useMutation({
-    mutationFn: createHealthData,
+    mutationFn: (data: any) => apiRequest("/api/health-data", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
     onSuccess: () => {
       toast({
         title: "Data Uploaded",
@@ -54,7 +57,7 @@ const DataUpload: React.FC = () => {
     const unit = getUnitForDataType(dataType);
     
     createHealthDataMutation.mutate({
-      userId: currentUser.uid,
+      userId: userProfile?.id!,
       type: dataType as any,
       value,
       unit,
@@ -73,14 +76,17 @@ const DataUpload: React.FC = () => {
       // Process each row and create health data entries
       for (const row of csvData) {
         const unit = getUnitForDataType(row.type);
-        await createHealthData({
-          userId: currentUser.uid,
-          type: row.type as any,
-          value: row.value,
-          unit,
-          timestamp: new Date(row.date),
-          source: "csv",
-          notes: row.notes,
+        await apiRequest("/api/health-data", {
+          method: "POST",
+          body: JSON.stringify({
+            userId: userProfile?.id!,
+            type: row.type as any,
+            value: row.value,
+            unit,
+            timestamp: new Date(row.date),
+            source: "csv",
+            notes: row.notes,
+          }),
         });
       }
 

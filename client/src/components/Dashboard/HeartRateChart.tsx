@@ -2,19 +2,19 @@ import React, { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
-import { getHealthDataByUser } from "@/lib/firestore";
+import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
 import Chart from "chart.js/auto";
 
 const HeartRateChart: React.FC = () => {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstance = useRef<Chart | null>(null);
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
 
   const { data: heartRateData, isLoading } = useQuery({
-    queryKey: ["/api/health-data", currentUser?.uid, "heart_rate"],
-    queryFn: () => getHealthDataByUser(currentUser?.uid!, "heart_rate"),
-    enabled: !!currentUser,
+    queryKey: ["/api/health-data", userProfile?.id, "heart_rate"],
+    queryFn: () => apiRequest(`/api/health-data/${userProfile?.id}?type=heart_rate`),
+    enabled: !!userProfile?.id,
   });
 
   useEffect(() => {

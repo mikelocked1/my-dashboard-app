@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Smartphone, CheckCircle } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createHealthData } from "@/lib/firestore";
+import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,7 +15,7 @@ interface SmartwatchData {
 }
 
 const SmartwatchIntegration: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [connectedDevices, setConnectedDevices] = useState<string[]>(["apple_watch"]);
@@ -38,29 +38,38 @@ const SmartwatchIntegration: React.FC = () => {
 
       // Create multiple health data entries
       const promises = [
-        createHealthData({
-          userId: currentUser?.uid!,
-          type: "steps",
-          value: data.steps.toString(),
-          unit: "steps",
-          timestamp,
-          source: source as any,
+        apiRequest("/api/health-data", {
+          method: "POST",
+          body: JSON.stringify({
+            userId: userProfile?.id!,
+            type: "steps",
+            value: data.steps.toString(),
+            unit: "steps",
+            timestamp: new Date(),
+            source: source,
+          }),
         }),
-        createHealthData({
-          userId: currentUser?.uid!,
-          type: "heart_rate",
-          value: data.heartRate.toString(),
-          unit: "BPM",
-          timestamp,
-          source: source as any,
+        apiRequest("/api/health-data", {
+          method: "POST",
+          body: JSON.stringify({
+            userId: userProfile?.id!,
+            type: "heart_rate",
+            value: data.heartRate.toString(),
+            unit: "BPM",
+            timestamp: new Date(),
+            source: source,
+          }),
         }),
-        createHealthData({
-          userId: currentUser?.uid!,
-          type: "sleep",
-          value: data.sleep.toString(),
-          unit: "hours",
-          timestamp,
-          source: source as any,
+        apiRequest("/api/health-data", {
+          method: "POST",
+          body: JSON.stringify({
+            userId: userProfile?.id!,
+            type: "sleep",
+            value: data.sleep.toString(),
+            unit: "hours",
+            timestamp: new Date(),
+            source: source,
+          }),
         }),
       ];
 

@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Star, Plus } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getDoctors, createAppointment } from "@/lib/firestore";
+import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { t } from "@/lib/i18n";
@@ -17,7 +17,7 @@ interface BookingData {
 }
 
 const DoctorBooking: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -27,22 +27,24 @@ const DoctorBooking: React.FC = () => {
 
   const { data: doctors, isLoading } = useQuery({
     queryKey: ["/api/doctors"],
-    queryFn: getDoctors,
+    queryFn: () => apiRequest("/api/doctors"),
   });
 
   const createAppointmentMutation = useMutation({
     mutationFn: async (bookingData: BookingData) => {
-      const doctor = doctors?.find(d => d.id === bookingData.doctorId);
+      const doctor = doctors?.find(d => d.id === parseInt(bookingData.doctorId));
       if (!doctor) throw new Error("Doctor not found");
 
-      return createAppointment({
-        patientId: currentUser?.uid!,
-        doctorId: bookingData.doctorId,
-        date: bookingData.date,
-        time: bookingData.time,
-        status: "scheduled",
-        type: "consultation",
-        amount: doctor.consultationFee,
+      return apiRequest("/api/appointments", {
+        method: "POST",
+        body: JSON.stringify({
+          patientId: userProfile?.id!,
+          doctorId: parseInt(bookingData.doctorId),
+          appointmentDate: new Date(`${bookingData.date}T${bookingData.time}`),
+          status: "scheduled",
+          type: "consultation",
+          consultationFee: doctor.consultationFee,
+        }),
       });
     },
     onSuccess: () => {

@@ -3,36 +3,36 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Thermometer, Scale, Footprints, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getHealthDataByUser } from "@/lib/firestore";
+import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { classifyHeartRate, classifyBloodPressure } from "@/utils/healthClassification";
 import { t } from "@/lib/i18n";
 
 const HealthMetrics: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   
   const { data: heartRateData } = useQuery({
-    queryKey: ["/api/health-data", currentUser?.uid, "heart_rate"],
-    queryFn: () => getHealthDataByUser(currentUser?.uid!, "heart_rate"),
-    enabled: !!currentUser,
+    queryKey: ["/api/health-data", userProfile?.id, "heart_rate"],
+    queryFn: () => apiRequest(`/api/health-data/${userProfile?.id}?type=heart_rate`),
+    enabled: !!userProfile?.id,
   });
 
   const { data: bloodPressureData } = useQuery({
-    queryKey: ["/api/health-data", currentUser?.uid, "blood_pressure"],
-    queryFn: () => getHealthDataByUser(currentUser?.uid!, "blood_pressure"),
-    enabled: !!currentUser,
+    queryKey: ["/api/health-data", userProfile?.id, "blood_pressure"],
+    queryFn: () => apiRequest(`/api/health-data/${userProfile?.id}?type=blood_pressure`),
+    enabled: !!userProfile?.id,
   });
 
   const { data: temperatureData } = useQuery({
-    queryKey: ["/api/health-data", currentUser?.uid, "temperature"],
-    queryFn: () => getHealthDataByUser(currentUser?.uid!, "temperature"),
-    enabled: !!currentUser,
+    queryKey: ["/api/health-data", userProfile?.id, "temperature"],
+    queryFn: () => apiRequest(`/api/health-data/${userProfile?.id}?type=temperature`),
+    enabled: !!userProfile?.id,
   });
 
   const { data: stepsData } = useQuery({
-    queryKey: ["/api/health-data", currentUser?.uid, "steps"],
-    queryFn: () => getHealthDataByUser(currentUser?.uid!, "steps"),
-    enabled: !!currentUser,
+    queryKey: ["/api/health-data", userProfile?.id, "steps"],
+    queryFn: () => apiRequest(`/api/health-data/${userProfile?.id}?type=steps`),
+    enabled: !!userProfile?.id,
   });
 
   const getLatestValue = (data: any[]) => {

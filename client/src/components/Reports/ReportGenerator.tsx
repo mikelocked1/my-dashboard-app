@@ -6,13 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Share2, Download, FileBarChart, ChartArea, Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getHealthDataByUser } from "@/lib/firestore";
+import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { generateHealthReport } from "@/utils/pdfGenerator";
 
 const ReportGenerator: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const { toast } = useToast();
   
   const [reportType, setReportType] = useState<string>("monthly_summary");
@@ -21,9 +21,9 @@ const ReportGenerator: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const { data: healthData } = useQuery({
-    queryKey: ["/api/health-data", currentUser?.uid],
-    queryFn: () => getHealthDataByUser(currentUser?.uid!),
-    enabled: !!currentUser,
+    queryKey: ["/api/health-data", userProfile?.id],
+    queryFn: () => apiRequest(`/api/health-data/${userProfile?.id}`),
+    enabled: !!userProfile?.id,
   });
 
   const handleGeneratePDF = async () => {

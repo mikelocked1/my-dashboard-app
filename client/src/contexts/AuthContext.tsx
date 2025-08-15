@@ -70,54 +70,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       
       if (user) {
-        try {
-          // Get user profile from our database
-          const response = await fetch(`/api/users/${user.uid}`);
-          if (response.ok) {
-            const profile = await response.json();
-            setUserProfile(profile);
-          } else if (response.status === 404) {
-            // If user doesn't exist in our database, create them
-            try {
-              const createResponse = await fetch("/api/users", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  firebaseUid: user.uid,
-                  email: user.email!,
-                  name: user.displayName || user.email!.split('@')[0],
-                  role: "user",
-                }),
-              });
-              
-              if (createResponse.ok) {
-                const newProfile = await createResponse.json();
-                setUserProfile(newProfile);
-              } else {
+        // Handle user profile fetching with proper error handling
+        const fetchUserProfile = async () => {
+          try {
+            // Get user profile from our database
+            const response = await fetch(`/api/users/${user.uid}`);
+            if (response.ok) {
+              const profile = await response.json();
+              setUserProfile(profile);
+            } else if (response.status === 404) {
+              // If user doesn't exist in our database, create them
+              try {
+                const createResponse = await fetch("/api/users", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    firebaseUid: user.uid,
+                    email: user.email!,
+                    name: user.displayName || user.email!.split('@')[0],
+                    role: "user",
+                  }),
+                });
+                
+                if (createResponse.ok) {
+                  const newProfile = await createResponse.json();
+                  setUserProfile(newProfile);
+                } else {
+                  console.error("Failed to create user profile");
+                  setUserProfile(null);
+                }
+              } catch (createError) {
+                console.error("Error creating user profile:", createError);
                 setUserProfile(null);
               }
-            } catch (createError) {
-              console.error("Error creating user profile:", createError);
+            } else {
+              console.error("Failed to fetch user profile");
               setUserProfile(null);
             }
-          } else {
+          } catch (error) {
+            console.error("Error fetching user profile:", error);
             setUserProfile(null);
+          } finally {
+            setLoading(false);
           }
-        } catch (error) {
-          console.error("Error fetching user profile:", error);
+        };
+        
+        fetchUserProfile().catch((error) => {
+          console.error("Unhandled error in user profile fetch:", error);
           setUserProfile(null);
-        }
+          setLoading(false);
+        });
       } else {
         setUserProfile(null);
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
     return unsubscribe;
@@ -134,7 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

@@ -3,16 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Brain, Bot, ArrowRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getAIHealthTipsByUser } from "@/lib/firestore";
+import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
 
 const AIHealthTips: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
 
   const { data: healthTips, isLoading } = useQuery({
-    queryKey: ["/api/ai-health-tips", currentUser?.uid],
-    queryFn: () => getAIHealthTipsByUser(currentUser?.uid!),
-    enabled: !!currentUser,
+    queryKey: ["/api/ai-health-tips", userProfile?.id],
+    queryFn: () => apiRequest(`/api/ai-health-tips/${userProfile?.id}`),
+    enabled: !!userProfile?.id,
   });
 
   // Sample tips if no data available

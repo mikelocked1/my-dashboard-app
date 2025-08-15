@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { t, setLanguage, getCurrentLanguage } from "@/lib/i18n";
-import { updateUser } from "@/lib/firestore";
+import { apiRequest } from "@/lib/queryClient";
 import { 
   User, 
   Settings as SettingsIcon, 
@@ -97,9 +97,15 @@ const Settings: React.FC = () => {
     
     setLoading(true);
     try {
-      await updateUser(userProfile.id, {
-        name: profileData.name,
-        email: profileData.email,
+      await fetch(`/api/users/${userProfile.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: profileData.name,
+          email: profileData.email,
+        }),
       });
       
       toast({

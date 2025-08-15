@@ -5,16 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Calendar, TrendingUp, FileText, Eye } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getAppointmentsByUser, getHealthDataByUser } from "@/lib/firestore";
+import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/AuthContext";
 
 const DoctorPortal: React.FC = () => {
   const { currentUser, userProfile } = useAuth();
 
   const { data: appointments } = useQuery({
-    queryKey: ["/api/appointments", currentUser?.uid, "doctor"],
-    queryFn: () => getAppointmentsByUser(currentUser?.uid!, "doctor"),
-    enabled: !!currentUser && userProfile?.role === "doctor",
+    queryKey: ["/api/appointments", userProfile?.id, "doctor"],
+    queryFn: () => apiRequest(`/api/appointments/doctor/${userProfile?.id}`),
+    enabled: !!userProfile?.id && userProfile?.role === "doctor",
   });
 
   // Mock patient data for demonstration
