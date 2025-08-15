@@ -1,5 +1,6 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCRpI3hfTNxX0QmEIRZJzAbZvq0ZtG8v3I",
@@ -14,3 +15,4 @@ const firebaseConfig = {
 // Initialize Firebase only if no apps exist (prevents duplicate app error during HMR)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 export const auth = getAuth(app);
+export const db = getFirestore(app);
