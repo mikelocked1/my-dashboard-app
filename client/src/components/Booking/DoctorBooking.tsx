@@ -32,7 +32,7 @@ const DoctorBooking: React.FC = () => {
 
   const createAppointmentMutation = useMutation({
     mutationFn: async (bookingData: BookingData) => {
-      const doctor = doctors?.find(d => d.id === parseInt(bookingData.doctorId));
+      const doctor = doctors?.find((d: any) => d.id === parseInt(bookingData.doctorId));
       if (!doctor) throw new Error("Doctor not found");
 
       return apiRequest("/api/appointments", {
@@ -100,7 +100,7 @@ const DoctorBooking: React.FC = () => {
     return dates;
   };
 
-  const selectedDoctorData = doctors?.find(d => d.id === selectedDoctor);
+  const selectedDoctorData = doctors?.find((d: any) => d.id === selectedDoctor);
 
   if (isLoading) {
     return (
@@ -136,7 +136,7 @@ const DoctorBooking: React.FC = () => {
               {t("booking.select_doctor")}
             </h4>
             <div className="space-y-3">
-              {doctors?.map((doctor) => (
+              {doctors?.map((doctor: any) => (
                 <div
                   key={doctor.id}
                   className={`border rounded-lg p-4 cursor-pointer transition-colors ${
@@ -193,7 +193,7 @@ const DoctorBooking: React.FC = () => {
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-1">
-                {getCalendarDates().slice(0, 14).map((date) => {
+                {getCalendarDates().map((date) => {
                   const dateStr = `2024-03-${date.toString().padStart(2, '0')}`;
                   return (
                     <button

@@ -77,7 +77,7 @@ export const healthData = pgTable("health_data", {
   unit: text("unit").notNull(),
   systolic: integer("systolic"), // for blood pressure
   diastolic: integer("diastolic"), // for blood pressure
-  timestamp: timestamp("timestamp").notNull(),
+  timestamp: timestamp("timestamp", { mode: 'string' }).notNull(),
   source: text("source", { 
     enum: ["manual", "csv", "smartwatch", "fitbit", "apple_health", "samsung_health", "google_fit"] 
   }).default("manual").notNull(),
