@@ -8,6 +8,9 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
+import HealthAnalytics from "@/pages/HealthAnalytics";
+import Appointments from "@/pages/Appointments";
+import Reports from "@/pages/Reports";
 import DoctorPortal from "@/pages/DoctorPortal";
 import Settings from "@/pages/Settings";
 import Header from "@/components/Layout/Header";
@@ -66,7 +69,7 @@ function Router() {
       <Route path="/health-analytics">
         <ProtectedRoute>
           <AppLayout>
-            <Dashboard />
+            <HealthAnalytics />
           </AppLayout>
         </ProtectedRoute>
       </Route>
@@ -74,7 +77,7 @@ function Router() {
       <Route path="/appointments">
         <ProtectedRoute>
           <AppLayout>
-            <Dashboard />
+            <Appointments />
           </AppLayout>
         </ProtectedRoute>
       </Route>
@@ -90,7 +93,7 @@ function Router() {
       <Route path="/reports">
         <ProtectedRoute>
           <AppLayout>
-            <Dashboard />
+            <Reports />
           </AppLayout>
         </ProtectedRoute>
       </Route>
