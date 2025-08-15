@@ -73,16 +73,29 @@ const Login: React.FC = () => {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Heart className="text-white h-8 w-8" />
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-orange-600 rounded-2xl flex items-center justify-center">
+              <Heart className="w-8 h-8 text-white" />
+            </div>
           </div>
-          <h1 className="text-3xl font-display font-bold text-gray-900 dark:text-white mb-2">
-            SmartCare
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Intelligent Health Companion
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">SmartCare</h1>
+          <p className="text-gray-600 dark:text-gray-300">Your intelligent healthcare companion</p>
         </div>
+
+        {/* Demo Credentials Card */}
+        <Card className="mb-6 border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-200">
+              🎓 School Project - Demo Credentials
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-xs space-y-2 text-blue-700 dark:text-blue-300">
+            <div><strong>Patient:</strong> patient@example.com</div>
+            <div><strong>Doctor:</strong> doctor@example.com</div>
+            <div><strong>Admin:</strong> admin@example.com</div>
+            <div className="text-blue-600 dark:text-blue-400 mt-2">Any password works for demo</div>
+          </CardContent>
+        </Card>
 
         {/* Auth Form */}
         <Card className="border border-gray-200 dark:border-gray-700 shadow-lg">
