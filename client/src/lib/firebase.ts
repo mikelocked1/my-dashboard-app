@@ -2,7 +2,7 @@ import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCRpIJ-kfEuX6iRUZCAqJ8ZSIQOqKQi8mU",
+  apiKey: "AIzaSyCRpI3hfTNxX0QmEIRZJzAbZvq0ZtG8v3I",
   authDomain: "health-compound.firebaseapp.com",
   projectId: "health-compound",
   storageBucket: "health-compound.firebasestorage.app",

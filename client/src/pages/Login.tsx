@@ -82,17 +82,17 @@ const Login: React.FC = () => {
           <p className="text-gray-600 dark:text-gray-300">Your intelligent healthcare companion</p>
         </div>
 
-        {/* Demo Info Card */}
-        <Card className="mb-6 border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
+        {/* Welcome Card */}
+        <Card className="mb-6 border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-green-800 dark:text-green-200">
-              🎓 School Project - Firebase Authentication
+            <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-200">
+              🎓 School Healthcare Project
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-xs space-y-2 text-green-700 dark:text-green-300">
-            <div>Create a new account or login with existing credentials</div>
-            <div className="text-green-600 dark:text-green-400 mt-2">
-              Firebase authentication is configured and working
+          <CardContent className="text-xs space-y-2 text-blue-700 dark:text-blue-300">
+            <div>Welcome to SmartCare - Your Healthcare Companion</div>
+            <div className="text-blue-600 dark:text-blue-400 mt-2">
+              Create an account or login to access your health dashboard
             </div>
           </CardContent>
         </Card>
