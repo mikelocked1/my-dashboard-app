@@ -180,6 +180,10 @@ export const getLanguage = (): Language => {
   return saved || "en";
 };
 
+export const getCurrentLanguage = (): Language => {
+  return currentLanguage;
+};
+
 export const t = (key: TranslationKey): string => {
   return translations[currentLanguage]?.[key] || translations.en[key] || key;
 };

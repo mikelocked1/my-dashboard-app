@@ -50,6 +50,14 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
   return null;
 };
 
+export const updateUser = async (id: string, userData: Partial<InsertUser>): Promise<void> => {
+  const userRef = doc(db, "users", id);
+  await updateDoc(userRef, {
+    ...userData,
+    updatedAt: Timestamp.now(),
+  });
+};
+
 // Doctors
 export const createDoctor = async (doctorData: InsertDoctor): Promise<string> => {
   const docRef = await addDoc(collection(db, "doctors"), {

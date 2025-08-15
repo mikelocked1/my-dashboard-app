@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import DoctorPortal from "@/pages/DoctorPortal";
+import Settings from "@/pages/Settings";
 import Header from "@/components/Layout/Header";
 import Sidebar from "@/components/Layout/Sidebar";
 
@@ -97,7 +98,7 @@ function Router() {
       <Route path="/settings">
         <ProtectedRoute>
           <AppLayout>
-            <Dashboard />
+            <Settings />
           </AppLayout>
         </ProtectedRoute>
       </Route>
