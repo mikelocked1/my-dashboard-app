@@ -43,8 +43,8 @@ const DoctorBooking: React.FC = () => {
         patientId: userProfile?.id!,
         doctorId: parseInt(bookingData.doctorId),
         appointmentDate: new Date(`${bookingData.date}T${bookingData.time}`),
-        status: "scheduled",
-        type: "consultation",
+        status: "scheduled" as const,
+        type: "consultation" as const,
         consultationFee: doctor.consultationFee,
       };
       
@@ -162,7 +162,7 @@ const DoctorBooking: React.FC = () => {
                     </Avatar>
                     <div className="flex-1">
                       <h5 className="font-medium text-gray-900 dark:text-white">
-                        Dr. {doctor.userId}
+                        {doctor.user.name}
                       </h5>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         {doctor.specialty}
@@ -174,13 +174,13 @@ const DoctorBooking: React.FC = () => {
                           ))}
                         </div>
                         <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                          {doctor.rating} ({doctor.reviewCount} reviews)
+                          4.8 ({doctor.experience} years exp.)
                         </span>
                       </div>
                     </div>
                     <div className="text-right">
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        ${doctor.consultationFee}
+                        GHS {doctor.consultationFee}
                       </span>
                       <p className="text-xs text-success">Available</p>
                     </div>

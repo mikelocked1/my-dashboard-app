@@ -103,7 +103,7 @@ export const appointments = pgTable("appointments", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => users.id).notNull(),
   doctorId: integer("doctor_id").references(() => doctors.id).notNull(),
-  appointmentDate: timestamp("appointment_date").notNull(),
+  appointmentDate: timestamp("appointment_date", { mode: 'string' }).notNull(),
   status: text("status", { 
     enum: ["scheduled", "confirmed", "completed", "cancelled", "no_show"] 
   }).default("scheduled").notNull(),
