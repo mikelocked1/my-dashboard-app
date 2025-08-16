@@ -32,19 +32,27 @@ const DoctorBooking: React.FC = () => {
 
   const createAppointmentMutation = useMutation({
     mutationFn: async (bookingData: BookingData) => {
+      console.log("Booking data:", bookingData);
+      console.log("User profile:", userProfile);
+      console.log("Available doctors:", doctors);
+      
       const doctor = doctors?.find((d: any) => d.id === parseInt(bookingData.doctorId));
       if (!doctor) throw new Error("Doctor not found");
 
+      const appointmentPayload = {
+        patientId: userProfile?.id!,
+        doctorId: parseInt(bookingData.doctorId),
+        appointmentDate: new Date(`${bookingData.date}T${bookingData.time}`),
+        status: "scheduled",
+        type: "consultation",
+        consultationFee: doctor.consultationFee,
+      };
+      
+      console.log("Appointment payload:", appointmentPayload);
+
       return apiRequest("/api/appointments", {
         method: "POST",
-        body: JSON.stringify({
-          patientId: userProfile?.id!,
-          doctorId: parseInt(bookingData.doctorId),
-          appointmentDate: new Date(`${bookingData.date}T${bookingData.time}`),
-          status: "scheduled",
-          type: "consultation",
-          consultationFee: doctor.consultationFee,
-        }),
+        body: JSON.stringify(appointmentPayload),
       });
     },
     onSuccess: () => {
@@ -59,9 +67,10 @@ const DoctorBooking: React.FC = () => {
       setSelectedTime("");
     },
     onError: (error) => {
+      console.error("Booking error:", error);
       toast({
         title: "Booking Failed",
-        description: "There was an error scheduling your appointment. Please try again.",
+        description: `Error: ${error?.message || 'Unknown error occurred'}. Please try again.`,
         variant: "destructive",
       });
     },
@@ -100,7 +109,7 @@ const DoctorBooking: React.FC = () => {
     return dates;
   };
 
-  const selectedDoctorData = doctors?.find((d: any) => d.id === selectedDoctor);
+  const selectedDoctorData = doctors?.find((d: any) => d.id === parseInt(selectedDoctor || '0'));
 
   if (isLoading) {
     return (
@@ -140,11 +149,11 @@ const DoctorBooking: React.FC = () => {
                 <div
                   key={doctor.id}
                   className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                    selectedDoctor === doctor.id
+                    selectedDoctor === doctor.id.toString()
                       ? "border-primary bg-primary/5"
                       : "border-gray-200 dark:border-gray-600 hover:border-primary"
                   }`}
-                  onClick={() => setSelectedDoctor(doctor.id)}
+                  onClick={() => setSelectedDoctor(doctor.id.toString())}
                 >
                   <div className="flex items-start space-x-3">
                     <Avatar>
