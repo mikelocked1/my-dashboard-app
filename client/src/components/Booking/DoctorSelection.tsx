@@ -290,7 +290,7 @@ const DoctorSelection: React.FC = () => {
                         
                         <div className="flex items-center justify-between">
                           <div className="text-lg font-semibold text-primary">
-                            ${doctor.consultationFee} per consultation
+                            GHS {doctor.consultationFee} per consultation
                           </div>
                           <Button 
                             onClick={() => {

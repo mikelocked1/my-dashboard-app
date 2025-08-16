@@ -39,13 +39,19 @@ const DoctorBooking: React.FC = () => {
       const doctor = doctors?.find((d: any) => d.id === parseInt(bookingData.doctorId));
       if (!doctor) throw new Error("Doctor not found");
 
+      // Ensure proper date format
+      const appointmentDateTime = new Date(`${bookingData.date}T${bookingData.time}:00`);
+      if (isNaN(appointmentDateTime.getTime())) {
+        throw new Error("Invalid date or time selected");
+      }
+
       const appointmentPayload = {
         patientId: userProfile?.id!,
         doctorId: parseInt(bookingData.doctorId),
-        appointmentDate: `${bookingData.date}T${bookingData.time}:00.000Z`,
+        appointmentDate: appointmentDateTime.toISOString(),
         status: "scheduled" as const,
         type: "consultation" as const,
-        consultationFee: doctor.consultationFee,
+        consultationFee: doctor.consultationFee.toString(),
       };
       
       console.log("Appointment payload:", appointmentPayload);

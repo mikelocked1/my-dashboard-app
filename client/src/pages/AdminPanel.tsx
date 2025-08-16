@@ -270,7 +270,7 @@ const AdminPanel: React.FC = () => {
                           </div>
                           <div className="flex items-center mt-1 text-sm font-medium text-primary">
                             <DollarSign className="w-3 h-3 mr-1" />
-                            ${doctor.consultationFee}
+                            GHS {doctor.consultationFee}
                           </div>
                           <div className="mt-2">
                             <Badge 
@@ -374,7 +374,7 @@ const AdminPanel: React.FC = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="fee">Consultation Fee ($) *</Label>
+                      <Label htmlFor="fee">Consultation Fee (GHS) *</Label>
                       <Input
                         id="fee"
                         type="number"

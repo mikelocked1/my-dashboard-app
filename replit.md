@@ -8,6 +8,7 @@ SmartCare is an intelligent healthcare companion application that provides compr
 
 ✓ **Project Successfully Migrated to Replit**: SmartCare has been migrated from Replit Agent to standard Replit environment
 ✓ **Appointment Booking System Fixed**: Resolved appointment booking validation errors and date format issues
+✓ **Currency Display Updated**: Changed from USD ($) to Ghanaian Cedi (GHS) throughout the application
 ✓ **Role-Based Authentication System**: Implemented complete role-based authentication with automatic routing based on user roles (patient/doctor/admin)
 ✓ **Doctor Verification Workflow**: New doctor accounts require admin approval before accepting patient bookings
 ✓ **Separate Dashboard Systems**: Created dedicated dashboards for patients, doctors, and administrators with role-specific navigation
