@@ -42,7 +42,7 @@ const DoctorBooking: React.FC = () => {
       const appointmentPayload = {
         patientId: userProfile?.id!,
         doctorId: parseInt(bookingData.doctorId),
-        appointmentDate: new Date(`${bookingData.date}T${bookingData.time}`),
+        appointmentDate: `${bookingData.date}T${bookingData.time}:00.000Z`,
         status: "scheduled" as const,
         type: "consultation" as const,
         consultationFee: doctor.consultationFee,

@@ -664,6 +664,7 @@ export class MemoryStorage implements IStorage {
     const user: User = {
       id: this.nextId++,
       ...userData,
+      role: userData.role || "user",
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -717,6 +718,7 @@ export class MemoryStorage implements IStorage {
     const doctor: Doctor = {
       id: this.nextId++,
       ...doctorData,
+      status: doctorData.status || "pending",
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -865,7 +867,6 @@ export class MemoryStorage implements IStorage {
       id: this.nextId++,
       ...data,
       createdAt: new Date(),
-      updatedAt: new Date(),
     };
     this.healthData.set(healthData.id, healthData);
     return healthData;
@@ -878,7 +879,6 @@ export class MemoryStorage implements IStorage {
     const updated: HealthData = {
       ...existing,
       ...data,
-      updatedAt: new Date(),
     };
     this.healthData.set(id, updated);
     return updated;
@@ -930,6 +930,10 @@ export class MemoryStorage implements IStorage {
     const appointment: Appointment = {
       id: this.nextId++,
       ...appointmentData,
+      status: appointmentData.status || "scheduled",
+      type: appointmentData.type || "consultation",
+      duration: appointmentData.duration || 30,
+      isVideoCall: appointmentData.isVideoCall || false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -961,7 +965,6 @@ export class MemoryStorage implements IStorage {
       id: this.nextId++,
       ...alertData,
       createdAt: new Date(),
-      updatedAt: new Date(),
     };
     this.healthAlerts.set(alert.id, alert);
     return alert;
@@ -987,7 +990,6 @@ export class MemoryStorage implements IStorage {
       id: this.nextId++,
       ...tipData,
       createdAt: new Date(),
-      updatedAt: new Date(),
     };
     this.aiHealthTips.set(tip.id, tip);
     return tip;
