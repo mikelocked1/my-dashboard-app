@@ -3,6 +3,7 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
+    console.error("API response not OK:", res.status, text);
     throw new Error(`${res.status}: ${text}`);
   }
 }
@@ -15,6 +16,8 @@ export async function apiRequest(
     headers?: Record<string, string>;
   }
 ): Promise<any> {
+  console.log("Making API request:", url, options);
+  
   const res = await fetch(url, {
     method: options?.method || "GET",
     headers: {
@@ -26,7 +29,9 @@ export async function apiRequest(
   });
 
   await throwIfResNotOk(res);
-  return await res.json();
+  const result = await res.json();
+  console.log("API request successful:", result);
+  return result;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
