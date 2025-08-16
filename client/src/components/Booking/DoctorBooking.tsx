@@ -56,7 +56,10 @@ const DoctorBooking: React.FC = () => {
         appointmentDate: appointmentDateTime.toISOString(),
         status: "scheduled" as const,
         type: "consultation" as const,
-        consultationFee: doctor.consultationFee.toString(),
+        consultationFee: doctor.consultationFee,
+        duration: 30,
+        isVideoCall: false,
+        patientNotes: null,
       };
       
       console.log("Appointment payload:", appointmentPayload);
@@ -277,10 +280,10 @@ const DoctorBooking: React.FC = () => {
                   {t("booking.summary")}
                 </h5>
                 <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                  <div>Dr. {selectedDoctorData?.userId} - {selectedDoctorData?.specialty}</div>
+                  <div>Dr. {selectedDoctorData?.user?.name} - {selectedDoctorData?.specialty}</div>
                   <div>{selectedDate} at {selectedTime}</div>
                   <div className="font-medium text-gray-900 dark:text-white">
-                    Total: ${selectedDoctorData?.consultationFee}.00
+                    Total: GHS {selectedDoctorData?.consultationFee}
                   </div>
                 </div>
                 <Button 

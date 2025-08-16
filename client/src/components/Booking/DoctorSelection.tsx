@@ -161,12 +161,13 @@ const DoctorSelection: React.FC = () => {
     const appointmentData = {
       patientId: userProfile.id,
       doctorId: selectedDoctor.id,
-      appointmentDate: appointmentDateTime,
+      appointmentDate: appointmentDateTime.toISOString(),
       type: appointmentType,
       isVideoCall,
-      consultationFee: parseFloat(selectedDoctor.consultationFee),
+      consultationFee: selectedDoctor.consultationFee,
       patientNotes: patientNotes || null,
-      status: "scheduled"
+      status: "scheduled",
+      duration: 30
     };
 
     bookAppointmentMutation.mutate(appointmentData);
