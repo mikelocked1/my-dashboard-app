@@ -38,6 +38,11 @@ const DoctorBooking: React.FC = () => {
       
       const doctor = doctors?.find((d: any) => d.id === parseInt(bookingData.doctorId));
       if (!doctor) throw new Error("Doctor not found");
+      
+      // Check doctor availability
+      if (!doctor.isAvailable) {
+        throw new Error("Selected doctor is currently unavailable");
+      }
 
       // Ensure proper date format
       const appointmentDateTime = new Date(`${bookingData.date}T${bookingData.time}:00`);
@@ -51,7 +56,7 @@ const DoctorBooking: React.FC = () => {
         appointmentDate: appointmentDateTime.toISOString(),
         status: "scheduled" as const,
         type: "consultation" as const,
-        consultationFee: doctor.consultationFee.toString(),
+        consultationFee: doctor.consultationFee,
       };
       
       console.log("Appointment payload:", appointmentPayload);
@@ -61,12 +66,17 @@ const DoctorBooking: React.FC = () => {
         body: JSON.stringify(appointmentPayload),
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Appointment created successfully:", data);
       toast({
         title: "Booking Confirmed",
         description: "Your appointment has been scheduled successfully.",
       });
+      // Invalidate all appointment-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/appointments/patient/${userProfile?.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/appointments/upcoming/${userProfile?.id}`] });
+      
       // Reset form
       setSelectedDoctor(null);
       setSelectedDate("");
