@@ -302,14 +302,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/appointments", async (req, res) => {
     try {
-      console.log("Received appointment data:", JSON.stringify(req.body, null, 2));
       const appointmentData = insertAppointmentSchema.parse(req.body);
-      console.log("Parsed appointment data:", JSON.stringify(appointmentData, null, 2));
       const appointment = await storage.createAppointment(appointmentData);
       res.status(201).json(appointment);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.error("Zod validation error:", JSON.stringify(error.errors, null, 2));
         return res.status(400).json({ error: "Invalid appointment data", details: error.errors });
       }
       console.error("Error creating appointment:", error);

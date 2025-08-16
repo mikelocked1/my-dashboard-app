@@ -56,7 +56,7 @@ const DoctorBooking: React.FC = () => {
         appointmentDate: appointmentDateTime.toISOString(),
         status: "scheduled" as const,
         type: "consultation" as const,
-        consultationFee: doctor.consultationFee,
+        consultationFee: doctor.consultationFee.toString(),
       };
       
       console.log("Appointment payload:", appointmentPayload);
