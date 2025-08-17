@@ -26,31 +26,31 @@ const Sidebar: React.FC = () => {
   const getNavigationByRole = () => {
     if (userProfile?.role === "admin") {
       return [
-        { name: "Admin Dashboard", href: "/", icon: Shield },
-        { name: "Doctor Approvals", href: "/admin", icon: UserCheck },
-        { name: "User Management", href: "/admin", icon: Users },
-        { name: "Settings", href: "/settings", icon: Settings },
+        { name: "Admin Dashboard", href: "/", icon: Shield, key: "admin-dashboard" },
+        { name: "Doctor Approvals", href: "/admin?tab=doctors", icon: UserCheck, key: "doctor-approvals" },
+        { name: "User Management", href: "/admin?tab=users", icon: Users, key: "user-management" },
+        { name: "Settings", href: "/settings", icon: Settings, key: "admin-settings" },
       ];
     }
 
     if (userProfile?.role === "doctor") {
       return [
-        { name: "Doctor Dashboard", href: "/doctor-dashboard", icon: Stethoscope },
-        { name: "Appointments", href: "/doctor-dashboard", icon: Calendar },
-        { name: "Patient Management", href: "/doctor-dashboard", icon: Users },
-        { name: "Profile", href: "/doctor-dashboard", icon: User },
-        { name: "Settings", href: "/settings", icon: Settings },
+        { name: "Doctor Dashboard", href: "/doctor-dashboard", icon: Stethoscope, key: "doctor-dashboard" },
+        { name: "Appointments", href: "/doctor-dashboard?tab=appointments", icon: Calendar, key: "doctor-appointments" },
+        { name: "Patient Management", href: "/doctor-dashboard?tab=patients", icon: Users, key: "patient-management" },
+        { name: "Profile", href: "/doctor-dashboard?tab=profile", icon: User, key: "doctor-profile" },
+        { name: "Settings", href: "/settings", icon: Settings, key: "doctor-settings" },
       ];
     }
 
     // Default patient navigation
     return [
-      { name: "Dashboard", href: "/dashboard", icon: Home },
-      { name: "Health Data", href: "/health-data", icon: Activity },
-      { name: "Analytics", href: "/analytics", icon: TrendingUp },
-      { name: "Book Appointment", href: "/appointments", icon: Calendar },
-      { name: "Reports", href: "/reports", icon: FileText },
-      { name: "Settings", href: "/settings", icon: Settings },
+      { name: "Dashboard", href: "/dashboard", icon: Home, key: "patient-dashboard" },
+      { name: "Health Data", href: "/health-data", icon: Activity, key: "health-data" },
+      { name: "Analytics", href: "/analytics", icon: TrendingUp, key: "analytics" },
+      { name: "Book Appointment", href: "/appointments", icon: Calendar, key: "appointments" },
+      { name: "Reports", href: "/reports", icon: FileText, key: "reports" },
+      { name: "Settings", href: "/settings", icon: Settings, key: "patient-settings" },
     ];
   };
 
@@ -58,9 +58,9 @@ const Sidebar: React.FC = () => {
 
   const filteredNavigation = navigationItems.filter(item => {
     // Admin specific routes
-    if (item.href === "/admin" && userProfile?.role !== "admin") return false;
+    if (item.href.startsWith("/admin") && userProfile?.role !== "admin") return false;
     // Doctor specific routes
-    if (item.href === "/doctor-dashboard" && userProfile?.role !== "doctor") return false;
+    if (item.href.startsWith("/doctor-dashboard") && userProfile?.role !== "doctor") return false;
     // Patient specific routes
     if (item.href === "/dashboard" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
     if (item.href === "/health-data" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
@@ -81,7 +81,7 @@ const Sidebar: React.FC = () => {
             const isActive = location === item.href;
 
             return (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.key} href={item.href}>
                 <div className={cn(
                   "flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors",
                   isActive 

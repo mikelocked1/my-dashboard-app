@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,9 @@ import {
   UserPlus,
   AlertCircle,
   CheckCircle,
-  XCircle
+  XCircle,
+  Edit,
+  Trash2
 } from "lucide-react";
 
 interface Doctor {
@@ -43,6 +46,16 @@ interface Doctor {
     email: string;
     role: string;
   };
+}
+
+interface User {
+  id: number;
+  firebaseUid: string;
+  email: string;
+  name: string;
+  role: 'user' | 'doctor' | 'admin';
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface NewDoctorFormData {
@@ -75,9 +88,27 @@ const AdminPanel: React.FC = () => {
   const { userProfile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [location] = useLocation();
   
-  const [activeTab, setActiveTab] = useState("doctors");
+  // Parse URL parameters to determine active tab
+  const getTabFromUrl = () => {
+    const urlParams = new URLSearchParams(location.split('?')[1] || '');
+    return urlParams.get('tab') || 'pending';
+  };
+  
+  const [activeTab, setActiveTab] = useState(getTabFromUrl());
   const [showAddDoctor, setShowAddDoctor] = useState(false);
+
+  // Update tab based on URL changes
+  useEffect(() => {
+    setActiveTab(getTabFromUrl());
+  }, [location]);
+
+  // Fetch all users for admin management
+  const { data: allUsers, isLoading: usersLoading } = useQuery<User[]>({
+    queryKey: ["/api/admin/users"],
+    queryFn: () => apiRequest("/api/admin/users"),
+  });
   const [formData, setFormData] = useState<NewDoctorFormData>({
     name: "",
     email: "",
@@ -164,6 +195,53 @@ const AdminPanel: React.FC = () => {
       toast({
         title: "Rejection Failed",
         description: "Failed to reject the doctor. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update user role mutation
+  const updateUserRoleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: number; role: string }) => {
+      return apiRequest(`/api/admin/users/${userId}/role`, {
+        method: "PUT",
+        body: JSON.stringify({ role }),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Role Updated",
+        description: "User role has been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    },
+    onError: () => {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update user role. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      return apiRequest(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "User Deleted",
+        description: "User has been deleted successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    },
+    onError: () => {
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete user. Please try again.",
         variant: "destructive",
       });
     },
@@ -608,14 +686,111 @@ const AdminPanel: React.FC = () => {
 
         <TabsContent value="users" data-testid="users-management">
           <Card>
-            <CardContent className="p-12 text-center">
-              <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                User Management
-              </h3>
+            <CardHeader>
+              <CardTitle>User Management</CardTitle>
               <p className="text-gray-600 dark:text-gray-400">
-                User management features coming soon.
+                Manage all system users, update roles, and control access.
               </p>
+            </CardHeader>
+            <CardContent>
+              {usersLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="animate-pulse flex items-center space-x-4 p-4 border rounded-lg">
+                      <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                        <div className="h-3 bg-gray-300 rounded w-1/3"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : !allUsers || allUsers.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    No Users Found
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    No users are currently registered in the system.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {allUsers.map((user) => (
+                    <Card key={user.id} className="border">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <Avatar>
+                              <AvatarFallback>
+                                {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h4 className="font-semibold text-gray-900 dark:text-white">
+                                {user.name}
+                              </h4>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {user.email}
+                              </p>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <Badge 
+                                  variant={
+                                    user.role === 'admin' ? 'default' : 
+                                    user.role === 'doctor' ? 'secondary' : 
+                                    'outline'
+                                  }
+                                >
+                                  {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                                </Badge>
+                                <span className="text-xs text-gray-500">
+                                  Joined {new Date(user.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Select 
+                              value={user.role} 
+                              onValueChange={(newRole) => 
+                                updateUserRoleMutation.mutate({ userId: user.id, role: newRole })
+                              }
+                              disabled={updateUserRoleMutation.isPending}
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="user">User</SelectItem>
+                                <SelectItem value="doctor">Doctor</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            
+                            {user.role !== 'admin' && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  if (window.confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) {
+                                    deleteUserMutation.mutate(user.id);
+                                  }
+                                }}
+                                disabled={deleteUserMutation.isPending}
+                                data-testid={`delete-user-${user.id}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

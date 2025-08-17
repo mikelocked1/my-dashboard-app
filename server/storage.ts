@@ -27,8 +27,10 @@ export interface IStorage {
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserById(id: number): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
 
   // Doctors
   getDoctors(): Promise<(Doctor & { user: User })[]>;
@@ -96,9 +98,24 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async getAllUsers(): Promise<User[]> {
+    const result = await db.select().from(users).orderBy(desc(users.createdAt));
+    return result;
+  }
+
   async updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined> {
     const result = await db.update(users).set({ ...user, updatedAt: new Date() }).where(eq(users.id, id)).returning();
     return result[0] || undefined;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(users).where(eq(users.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      return false;
+    }
   }
 
   // Doctors
@@ -782,6 +799,10 @@ export class MemoryStorage implements IStorage {
     return user;
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return [...this.users].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
     const existingIndex = this.users.findIndex(user => user.id === id);
     if (existingIndex === -1) return undefined;
@@ -793,6 +814,21 @@ export class MemoryStorage implements IStorage {
     };
     this.users[existingIndex] = updated;
     return updated;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    const userIndex = this.users.findIndex(u => u.id === id);
+    if (userIndex === -1) return false;
+
+    // Also remove associated doctors, health data, appointments, etc.
+    this.doctors = this.doctors.filter(d => d.userId !== id);
+    this.healthData = this.healthData.filter(h => h.userId !== id);
+    this.appointments = this.appointments.filter(a => a.patientId !== id);
+    this.healthAlerts = this.healthAlerts.filter(h => h.userId !== id);
+    this.aiHealthTips = this.aiHealthTips.filter(t => t.userId !== id);
+    
+    this.users.splice(userIndex, 1);
+    return true;
   }
 
   // Doctors
