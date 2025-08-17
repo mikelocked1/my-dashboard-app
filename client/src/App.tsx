@@ -21,7 +21,7 @@ import Sidebar from "@/components/Layout/Sidebar";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { currentUser, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -32,11 +32,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  
+
   if (!currentUser) {
     return <Redirect to="/login" />;
   }
-  
+
   return <>{children}</>;
 }
 
@@ -55,7 +55,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 // Helper function to get dashboard route based on user role
 function getDashboardRoute(userProfile: any) {
   if (!userProfile) return "/dashboard";
-  
+
   switch (userProfile.role) {
     case "doctor":
       return "/doctor-dashboard";
@@ -68,14 +68,14 @@ function getDashboardRoute(userProfile: any) {
 }
 
 function Router() {
-  const { currentUser, userProfile } = useAuth();
-  
+  const { currentUser, userProfile, loading } = useAuth();
+
   return (
     <Switch>
       <Route path="/login">
         {currentUser ? <Redirect to={getDashboardRoute(userProfile)} /> : <Login />}
       </Route>
-      
+
       <Route path="/dashboard">
         <ProtectedRoute>
           <AppLayout>
@@ -83,7 +83,7 @@ function Router() {
           </AppLayout>
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/doctor-dashboard">
         <ProtectedRoute>
           <AppLayout>
@@ -91,7 +91,7 @@ function Router() {
           </AppLayout>
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/health-analytics">
         <ProtectedRoute>
           <AppLayout>
@@ -99,7 +99,7 @@ function Router() {
           </AppLayout>
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/health-data-entry">
         <ProtectedRoute>
           <AppLayout>
@@ -107,7 +107,7 @@ function Router() {
           </AppLayout>
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/appointments">
         <ProtectedRoute>
           <AppLayout>
@@ -115,7 +115,7 @@ function Router() {
           </AppLayout>
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/patients">
         <ProtectedRoute>
           <AppLayout>
@@ -123,7 +123,7 @@ function Router() {
           </AppLayout>
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/reports">
         <ProtectedRoute>
           <AppLayout>
@@ -131,7 +131,7 @@ function Router() {
           </AppLayout>
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/settings">
         <ProtectedRoute>
           <AppLayout>
@@ -139,7 +139,7 @@ function Router() {
           </AppLayout>
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/admin">
         <ProtectedRoute>
           <AppLayout>
@@ -147,11 +147,11 @@ function Router() {
           </AppLayout>
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/">
         {currentUser ? <Redirect to={getDashboardRoute(userProfile)} /> : <Redirect to="/login" />}
       </Route>
-      
+
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>

@@ -85,6 +85,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else if (response.status === 404) {
               // If user doesn't exist in our database, create them
               try {
+                // Check if this is the admin email
+                const isAdmin = user.email === "admin@healthsync.com";
+                
                 const createResponse = await fetch("/api/users", {
                   method: "POST",
                   headers: {
@@ -93,8 +96,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   body: JSON.stringify({
                     firebaseUid: user.uid,
                     email: user.email!,
-                    name: user.displayName || user.email!.split('@')[0],
-                    role: "user",
+                    name: isAdmin ? "System Administrator" : (user.displayName || user.email!.split('@')[0]),
+                    role: isAdmin ? "admin" : "user",
                   }),
                 });
                 

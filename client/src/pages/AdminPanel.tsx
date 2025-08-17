@@ -20,7 +20,10 @@ import {
   DollarSign,
   Star,
   Shield,
-  UserPlus
+  UserPlus,
+  AlertCircle,
+  CheckCircle,
+  XCircle
 } from "lucide-react";
 
 interface Doctor {
@@ -108,7 +111,62 @@ const AdminPanel: React.FC = () => {
   // Fetch all doctors
   const { data: doctors, isLoading } = useQuery<Doctor[]>({
     queryKey: ["/api/doctors"],
-    queryFn: () => apiRequest("/api/doctors"),
+    queryFn: () => apiRequest("/api/doctors?approved=false"),
+  });
+
+  // Fetch pending doctors for approval
+  const { data: pendingDoctors, isLoading: pendingLoading } = useQuery<Doctor[]>({
+    queryKey: ["/api/admin/doctors/pending"],
+    queryFn: () => apiRequest("/api/admin/doctors/pending"),
+  });
+
+  // Approve doctor mutation
+  const approveDoctorMutation = useMutation({
+    mutationFn: async (doctorId: number) => {
+      return apiRequest(`/api/admin/doctors/${doctorId}/approve`, {
+        method: "PUT",
+        body: JSON.stringify({ approvedBy: userProfile?.id }),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Doctor Approved",
+        description: "The doctor has been approved and can now accept appointments.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/doctors/pending"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
+    },
+    onError: () => {
+      toast({
+        title: "Approval Failed",
+        description: "Failed to approve the doctor. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Reject doctor mutation
+  const rejectDoctorMutation = useMutation({
+    mutationFn: async ({ doctorId, reason }: { doctorId: number; reason: string }) => {
+      return apiRequest(`/api/admin/doctors/${doctorId}/reject`, {
+        method: "PUT",
+        body: JSON.stringify({ rejectionReason: reason }),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Doctor Rejected",
+        description: "The doctor application has been rejected.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/doctors/pending"] });
+    },
+    onError: () => {
+      toast({
+        title: "Rejection Failed",
+        description: "Failed to reject the doctor. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   // Add doctor mutation
@@ -219,15 +277,115 @@ const AdminPanel: React.FC = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList data-testid="admin-tabs">
+          <TabsTrigger value="pending">
+            <AlertCircle className="w-4 h-4 mr-2" />
+            Pending Approvals ({pendingDoctors?.length || 0})
+          </TabsTrigger>
           <TabsTrigger value="doctors">
             <Stethoscope className="w-4 h-4 mr-2" />
-            Doctors ({doctors?.length || 0})
+            All Doctors ({doctors?.length || 0})
           </TabsTrigger>
           <TabsTrigger value="users">
             <Users className="w-4 h-4 mr-2" />
             Users
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="pending" data-testid="pending-approvals">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pending Doctor Approvals</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pendingLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="animate-pulse flex items-center space-x-4 p-4 border rounded-lg">
+                      <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                        <div className="h-3 bg-gray-300 rounded w-1/3"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : !pendingDoctors || pendingDoctors.length === 0 ? (
+                <div className="text-center py-12">
+                  <UserPlus className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    No Pending Approvals
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    All doctor registrations have been processed.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pendingDoctors.map((doctor) => (
+                    <Card key={doctor.id} className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-800">
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-4">
+                            <Avatar className="w-12 h-12">
+                              <AvatarFallback>
+                                {doctor.user.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900 dark:text-white">
+                                Dr. {doctor.user.name}
+                              </h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {doctor.user.email}
+                              </p>
+                              <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mt-1">
+                                {doctor.specialty}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {doctor.experience} years experience • GHS {doctor.consultationFee}
+                              </p>
+                              {doctor.bio && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">
+                                  {doctor.bio}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100">
+                            <AlertCircle className="w-3 h-3 mr-1" />
+                            Pending
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex justify-end space-x-2 mt-4 pt-4 border-t">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => rejectDoctorMutation.mutate({ doctorId: doctor.id, reason: "Application rejected by admin" })}
+                            disabled={rejectDoctorMutation.isPending}
+                            className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                          >
+                            <XCircle className="w-4 h-4 mr-1" />
+                            Reject
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => approveDoctorMutation.mutate(doctor.id)}
+                            disabled={approveDoctorMutation.isPending}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            Approve
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="doctors" data-testid="doctors-management">
           {!showAddDoctor ? (

@@ -469,6 +469,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin routes for doctor management
+  app.get("/api/admin/doctors/pending", async (req, res) => {
+    try {
+      const pendingDoctors = await storage.getPendingDoctors();
+      res.json(pendingDoctors);
+    } catch (error) {
+      console.error("Error fetching pending doctors:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/admin/doctors/:id/approve", async (req, res) => {
+    try {
+      const doctorId = parseInt(req.params.id);
+      const { approvedBy } = req.body;
+      
+      const doctor = await storage.approveDoctor(doctorId, approvedBy);
+      if (!doctor) {
+        return res.status(404).json({ error: "Doctor not found" });
+      }
+      
+      res.json(doctor);
+    } catch (error) {
+      console.error("Error approving doctor:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/admin/doctors/:id/reject", async (req, res) => {
+    try {
+      const doctorId = parseInt(req.params.id);
+      const { rejectionReason } = req.body;
+      
+      const doctor = await storage.rejectDoctor(doctorId, rejectionReason);
+      if (!doctor) {
+        return res.status(404).json({ error: "Doctor not found" });
+      }
+      
+      res.json(doctor);
+    } catch (error) {
+      console.error("Error rejecting doctor:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Seed data route - for development/demo purposes
   app.post("/api/seed-data", async (req, res) => {
     try {

@@ -9,7 +9,11 @@ import {
   FileText, 
   Settings,
   Activity,
-  Shield
+  Shield,
+  UserCheck,
+  Stethoscope,
+  User,
+  Home
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { t } from "@/lib/i18n";
@@ -18,118 +22,55 @@ const Sidebar: React.FC = () => {
   const [location] = useLocation();
   const { userProfile } = useAuth();
 
-  // Dynamic navigation items based on user role
-  const getNavigationItems = () => {
-    const role = userProfile?.role || "user";
-    
-    const baseItems = [
-      {
-        href: "/settings",
-        icon: Settings,
-        label: t("nav.settings"),
-        roles: ["user", "doctor", "admin"]
-      },
-    ];
-
-    if (role === "doctor") {
+  // Role-based navigation
+  const getNavigationByRole = () => {
+    if (userProfile?.role === "admin") {
       return [
-        {
-          href: "/doctor-dashboard",
-          icon: LayoutDashboard,
-          label: "Doctor Dashboard",
-          roles: ["doctor"]
-        },
-        {
-          href: "/appointments",
-          icon: Calendar,
-          label: "My Appointments",
-          roles: ["doctor"]
-        },
-        {
-          href: "/patients",
-          icon: Users,
-          label: "My Patients",
-          roles: ["doctor"]
-        },
-        {
-          href: "/reports",
-          icon: FileText,
-          label: "Patient Reports",
-          roles: ["doctor"]
-        },
-        ...baseItems
-      ];
-    } else if (role === "admin") {
-      return [
-        {
-          href: "/admin",
-          icon: Shield,
-          label: "Admin Panel",
-          roles: ["admin"]
-        },
-        {
-          href: "/dashboard",
-          icon: LayoutDashboard,
-          label: t("nav.dashboard"),
-          roles: ["admin"]
-        },
-        {
-          href: "/appointments",
-          icon: Calendar,
-          label: t("nav.appointments"),
-          roles: ["admin"]
-        },
-        {
-          href: "/reports",
-          icon: FileText,
-          label: t("nav.reports"),
-          roles: ["admin"]
-        },
-        ...baseItems
-      ];
-    } else {
-      // Patient/user navigation
-      return [
-        {
-          href: "/dashboard",
-          icon: LayoutDashboard,
-          label: t("nav.dashboard"),
-          roles: ["user"]
-        },
-        {
-          href: "/health-analytics",
-          icon: TrendingUp,
-          label: t("nav.health_analytics"),
-          roles: ["user"]
-        },
-        {
-          href: "/health-data-entry",
-          icon: Activity,
-          label: "Health Data Entry",
-          roles: ["user"]
-        },
-        {
-          href: "/appointments",
-          icon: Calendar,
-          label: t("nav.appointments"),
-          roles: ["user"]
-        },
-        {
-          href: "/reports",
-          icon: FileText,
-          label: t("nav.reports"),
-          roles: ["user"]
-        },
-        ...baseItems
+        { name: "Admin Dashboard", href: "/", icon: Shield },
+        { name: "Doctor Approvals", href: "/admin", icon: UserCheck },
+        { name: "User Management", href: "/admin", icon: Users },
+        { name: "Settings", href: "/settings", icon: Settings },
       ];
     }
+
+    if (userProfile?.role === "doctor") {
+      return [
+        { name: "Doctor Dashboard", href: "/doctor-dashboard", icon: Stethoscope },
+        { name: "Appointments", href: "/doctor-dashboard", icon: Calendar },
+        { name: "Patient Management", href: "/doctor-dashboard", icon: Users },
+        { name: "Profile", href: "/doctor-dashboard", icon: User },
+        { name: "Settings", href: "/settings", icon: Settings },
+      ];
+    }
+
+    // Default patient navigation
+    return [
+      { name: "Dashboard", href: "/dashboard", icon: Home },
+      { name: "Health Data", href: "/health-data", icon: Activity },
+      { name: "Analytics", href: "/analytics", icon: TrendingUp },
+      { name: "Book Appointment", href: "/appointments", icon: Calendar },
+      { name: "Reports", href: "/reports", icon: FileText },
+      { name: "Settings", href: "/settings", icon: Settings },
+    ];
   };
 
-  const navigationItems = getNavigationItems();
+  const navigationItems = getNavigationByRole();
 
-  const filteredNavigation = navigationItems.filter(item => 
-    item.roles.includes(userProfile?.role || "user")
-  );
+  const filteredNavigation = navigationItems.filter(item => {
+    // Admin specific routes
+    if (item.href === "/admin" && userProfile?.role !== "admin") return false;
+    // Doctor specific routes
+    if (item.href === "/doctor-dashboard" && userProfile?.role !== "doctor") return false;
+    // Patient specific routes
+    if (item.href === "/dashboard" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
+    if (item.href === "/health-data" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
+    if (item.href === "/analytics" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
+    if (item.href === "/appointments" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
+    if (item.href === "/reports" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
+    
+    return true;
+  });
+
 
   return (
     <aside className="w-64 bg-white dark:bg-gray-800 shadow-sm h-screen sticky top-16 border-r border-gray-200 dark:border-gray-700">
@@ -138,7 +79,7 @@ const Sidebar: React.FC = () => {
           {filteredNavigation.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.href;
-            
+
             return (
               <Link key={item.href} href={item.href}>
                 <div className={cn(
@@ -148,13 +89,13 @@ const Sidebar: React.FC = () => {
                     : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                 )}>
                   <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-medium">{item.name}</span>
                 </div>
               </Link>
             );
           })}
         </div>
-        
+
         {/* Quick Stats Card */}
         <div className="mt-8 bg-gradient-to-br from-secondary to-teal-600 rounded-xl p-4 text-white">
           <h3 className="font-display font-semibold mb-2">{t("dashboard.today_overview")}</h3>
