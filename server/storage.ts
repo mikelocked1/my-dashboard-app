@@ -81,13 +81,13 @@ export class DatabaseStorage implements IStorage {
     return result[0] || undefined;
   }
 
-  async getUserById(id: number): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
     return result[0] || undefined;
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  async getUserById(id: number): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
     return result[0] || undefined;
   }
 
@@ -762,12 +762,12 @@ export class MemoryStorage implements IStorage {
     return this.users.find(user => user.firebaseUid === firebaseUid);
   }
 
-  async getUserById(id: number): Promise<User | undefined> {
-    return this.users.find(user => user.id === id);
-  }
-
   async getUserByEmail(email: string): Promise<User | undefined> {
     return this.users.find(user => user.email === email);
+  }
+
+  async getUserById(id: number): Promise<User | undefined> {
+    return this.users.find(user => user.id === id);
   }
 
   async createUser(userData: InsertUser): Promise<User> {

@@ -514,6 +514,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin account creation route - for development/demo purposes
+  app.post("/api/create-admin", async (req, res) => {
+    try {
+      // Check if admin already exists in local database
+      const existingAdmin = await storage.getUserByEmail("admin@healthsync.com");
+      
+      if (existingAdmin) {
+        return res.json({ 
+          message: "Admin account already exists",
+          email: "admin@healthsync.com",
+          note: "Use Firebase Auth to create the authentication account if needed"
+        });
+      }
+
+      // Create admin in local database
+      const adminData = {
+        firebaseUid: "admin_uid_manual_" + Date.now(),
+        email: "admin@healthsync.com",
+        name: "System Administrator",
+        role: "admin" as const
+      };
+
+      const admin = await storage.createUser(adminData);
+      
+      res.json({
+        message: "Admin account created successfully",
+        admin: admin,
+        credentials: {
+          email: "admin@healthsync.com",
+          password: "admin123",
+          note: "You still need to create this account in Firebase Auth by registering through the app"
+        }
+      });
+    } catch (error) {
+      console.error("Error creating admin account:", error);
+      res.status(500).json({ error: "Failed to create admin account" });
+    }
+  });
+
   // Seed data route - for development/demo purposes
   app.post("/api/seed-data", async (req, res) => {
     try {
