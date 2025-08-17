@@ -1,11 +1,11 @@
-import { 
-  type User, 
-  type InsertUser, 
-  type Doctor, 
-  type InsertDoctor, 
-  type HealthData, 
-  type InsertHealthData, 
-  type Appointment, 
+import {
+  type User,
+  type InsertUser,
+  type Doctor,
+  type InsertDoctor,
+  type HealthData,
+  type InsertHealthData,
+  type Appointment,
   type InsertAppointment,
   type HealthAlert,
   type InsertHealthAlert,
@@ -26,6 +26,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserById(id: number): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
 
@@ -76,6 +77,11 @@ export class DatabaseStorage implements IStorage {
     return result[0] || undefined;
   }
 
+  async getUserById(id: number): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0] || undefined;
+  }
+
   async getUserByEmail(email: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
     return result[0] || undefined;
@@ -99,11 +105,11 @@ export class DatabaseStorage implements IStorage {
         .from(doctors)
         .leftJoin(users, eq(doctors.userId, users.id))
         .where(eq(doctors.isAvailable, true));
-      
+
       if (!Array.isArray(result)) {
         return [];
       }
-      
+
       return result.map((row: any) => ({
         ...row.doctors,
         user: row.users!
@@ -122,11 +128,11 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(users, eq(doctors.userId, users.id))
         .where(eq(doctors.id, id))
         .limit(1);
-      
+
       if (!Array.isArray(result) || result.length === 0) {
         return undefined;
       }
-      
+
       if (result[0]) {
         return {
           ...result[0].doctors,
@@ -147,11 +153,11 @@ export class DatabaseStorage implements IStorage {
         .from(doctors)
         .leftJoin(users, eq(doctors.userId, users.id))
         .where(and(eq(doctors.specialty, specialty), eq(doctors.isAvailable, true)));
-      
+
       if (!Array.isArray(result)) {
         return [];
       }
-      
+
       return result.map((row: any) => ({
         ...row.doctors,
         user: row.users!
@@ -180,11 +186,11 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(users, eq(doctors.userId, users.id))
         .where(eq(doctors.userId, userId))
         .limit(1);
-      
+
       if (!Array.isArray(result) || result.length === 0) {
         return undefined;
       }
-      
+
       if (result[0]) {
         return {
           ...result[0].doctors,
@@ -205,11 +211,11 @@ export class DatabaseStorage implements IStorage {
         .from(doctors)
         .leftJoin(users, eq(doctors.userId, users.id))
         .where(and(eq(doctors.status, "approved"), eq(doctors.isAvailable, true)));
-      
+
       if (!Array.isArray(result)) {
         return [];
       }
-      
+
       return result.map((row: any) => ({
         ...row.doctors,
         user: row.users!
@@ -308,7 +314,7 @@ export class DatabaseStorage implements IStorage {
       for (const preloadedDoctor of preloadedDoctors) {
         // Create user first
         const createdUser = await this.createUser(preloadedDoctor.user);
-        
+
         // Then create doctor profile
         await this.createDoctor({
           ...preloadedDoctor.doctor,
@@ -333,7 +339,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(healthData.userId, userId))
         .orderBy(desc(healthData.timestamp))
         .limit(limit);
-      
+
       return Array.isArray(result) ? result : [];
     } catch (error) {
       console.error('Error in getHealthDataByUser:', error);
@@ -344,7 +350,7 @@ export class DatabaseStorage implements IStorage {
   async getHealthDataByType(userId: number, type: string, startDate?: Date, endDate?: Date): Promise<HealthData[]> {
     try {
       const conditions = [eq(healthData.userId, userId), eq(healthData.type, type as any)];
-      
+
       if (startDate) {
         conditions.push(gte(healthData.timestamp, startDate.toISOString()));
       }
@@ -357,7 +363,7 @@ export class DatabaseStorage implements IStorage {
         .from(healthData)
         .where(and(...conditions))
         .orderBy(desc(healthData.timestamp));
-      
+
       return Array.isArray(result) ? result : [];
     } catch (error) {
       console.error('Error in getHealthDataByType:', error);
@@ -367,11 +373,11 @@ export class DatabaseStorage implements IStorage {
 
   async createHealthData(data: InsertHealthData): Promise<HealthData> {
     const result = await db.insert(healthData).values(data).returning();
-    
+
     // Check for health alerts based on the new data
     const newData = result[0];
     await this.checkAndCreateHealthAlerts(newData);
-    
+
     return newData;
   }
 
@@ -439,7 +445,7 @@ export class DatabaseStorage implements IStorage {
   async getUpcomingAppointments(userId: number, isDoctor: boolean = false): Promise<any[]> {
     try {
       const now = new Date();
-      
+
       if (isDoctor) {
         const result = await db
           .select()
@@ -452,11 +458,11 @@ export class DatabaseStorage implements IStorage {
           ))
           .orderBy(appointments.appointmentDate)
           .limit(10);
-        
+
         if (!Array.isArray(result)) {
           return [];
         }
-        
+
         return result.map((row: any) => ({
           ...row.appointments,
           patient: row.users
@@ -474,11 +480,11 @@ export class DatabaseStorage implements IStorage {
           ))
           .orderBy(appointments.appointmentDate)
           .limit(10);
-        
+
         if (!Array.isArray(result)) {
           return [];
         }
-        
+
         return result.map((row: any) => ({
           ...row.appointments,
           doctor: row.doctors && row.users ? { ...row.doctors, user: row.users } : null
@@ -509,7 +515,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(healthAlerts.userId, userId))
         .orderBy(desc(healthAlerts.createdAt))
         .limit(limit);
-      
+
       return Array.isArray(result) ? result : [];
     } catch (error) {
       console.error('Error in getHealthAlerts:', error);
@@ -536,7 +542,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(aiHealthTips.userId, userId))
         .orderBy(desc(aiHealthTips.createdAt))
         .limit(limit);
-      
+
       return Array.isArray(result) ? result : [];
     } catch (error) {
       console.error('Error in getAiHealthTips:', error);
@@ -656,6 +662,10 @@ export class MemoryStorage implements IStorage {
     return Array.from(this.users.values()).find(user => user.firebaseUid === firebaseUid);
   }
 
+  async getUserById(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
   async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(user => user.email === email);
   }
@@ -675,7 +685,7 @@ export class MemoryStorage implements IStorage {
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
     const existing = this.users.get(id);
     if (!existing) return undefined;
-    
+
     const updated: User = {
       ...existing,
       ...userData,
@@ -688,24 +698,24 @@ export class MemoryStorage implements IStorage {
   // Doctors
   async getDoctors(): Promise<(Doctor & { user: User })[]> {
     const result: (Doctor & { user: User })[] = [];
-    
+
     for (const doctor of this.doctors.values()) {
       const user = this.users.get(doctor.userId);
       if (user) {
         result.push({ ...doctor, user });
       }
     }
-    
+
     return result;
   }
 
   async getDoctorById(id: number): Promise<(Doctor & { user: User }) | undefined> {
     const doctor = this.doctors.get(id);
     if (!doctor) return undefined;
-    
+
     const user = this.users.get(doctor.userId);
     if (!user) return undefined;
-    
+
     return { ...doctor, user };
   }
 
@@ -729,7 +739,7 @@ export class MemoryStorage implements IStorage {
   async updateDoctor(id: number, doctorData: Partial<InsertDoctor>): Promise<Doctor | undefined> {
     const existing = this.doctors.get(id);
     if (!existing) return undefined;
-    
+
     const updated: Doctor = {
       ...existing,
       ...doctorData,
@@ -742,10 +752,10 @@ export class MemoryStorage implements IStorage {
   async getDoctorByUserId(userId: number): Promise<(Doctor & { user: User }) | undefined> {
     const doctor = Array.from(this.doctors.values()).find(d => d.userId === userId);
     if (!doctor) return undefined;
-    
+
     const user = this.users.get(doctor.userId);
     if (!user) return undefined;
-    
+
     return { ...doctor, user };
   }
 
@@ -875,7 +885,7 @@ export class MemoryStorage implements IStorage {
   async updateHealthData(id: number, data: Partial<InsertHealthData>): Promise<HealthData | undefined> {
     const existing = this.healthData.get(id);
     if (!existing) return undefined;
-    
+
     const updated: HealthData = {
       ...existing,
       ...data,
@@ -890,7 +900,7 @@ export class MemoryStorage implements IStorage {
 
   async getAppointmentsByPatient(patientId: number): Promise<(Appointment & { doctor: Doctor & { user: User } })[]> {
     const result: (Appointment & { doctor: Doctor & { user: User } })[] = [];
-    
+
     for (const appointment of this.appointments.values()) {
       if (appointment.patientId === patientId) {
         const doctor = await this.getDoctorById(appointment.doctorId);
@@ -899,13 +909,13 @@ export class MemoryStorage implements IStorage {
         }
       }
     }
-    
+
     return result;
   }
 
   async getAppointmentsByDoctor(doctorId: number): Promise<(Appointment & { patient: User })[]> {
     const result: (Appointment & { patient: User })[] = [];
-    
+
     for (const appointment of this.appointments.values()) {
       if (appointment.doctorId === doctorId) {
         const patient = this.users.get(appointment.patientId);
@@ -914,7 +924,7 @@ export class MemoryStorage implements IStorage {
         }
       }
     }
-    
+
     return result;
   }
 
@@ -944,7 +954,7 @@ export class MemoryStorage implements IStorage {
   async updateAppointment(id: number, appointmentData: Partial<InsertAppointment>): Promise<Appointment | undefined> {
     const existing = this.appointments.get(id);
     if (!existing) return undefined;
-    
+
     const updated: Appointment = {
       ...existing,
       ...appointmentData,
@@ -973,7 +983,7 @@ export class MemoryStorage implements IStorage {
   async markAlertAsRead(id: number): Promise<boolean> {
     const alert = this.healthAlerts.get(id);
     if (!alert) return false;
-    
+
     const updated = { ...alert, isRead: true, updatedAt: new Date() };
     this.healthAlerts.set(id, updated);
     return true;
@@ -998,7 +1008,7 @@ export class MemoryStorage implements IStorage {
   async markTipAsRead(id: number): Promise<boolean> {
     const tip = this.aiHealthTips.get(id);
     if (!tip) return false;
-    
+
     const updated = { ...tip, isRead: true, updatedAt: new Date() };
     this.aiHealthTips.set(id, updated);
     return true;

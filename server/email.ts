@@ -25,47 +25,68 @@ interface AppointmentEmailData {
 
 class EmailService {
   private transporter: nodemailer.Transporter | null = null;
+  private isInitializing: boolean = false;
+  private initPromise: Promise<void> | null = null;
 
   constructor() {
     this.initTransporter();
   }
 
-  private initTransporter() {
-    // For development, use ethereal email (fake SMTP)
-    // In production, replace with your actual email service credentials
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    
-    if (isDevelopment) {
-      // Create test account for development
-      nodemailer.createTestAccount().then((testAccount) => {
-        this.transporter = nodemailer.createTransport({
-          host: 'smtp.ethereal.email',
-          port: 587,
-          secure: false,
-          auth: {
-            user: testAccount.user,
-            pass: testAccount.pass,
-          },
-        });
-      }).catch(console.error);
-    } else {
-      // Production email configuration
-      // You can configure this with Gmail, SendGrid, or other email services
-      this.transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT || '587'),
-        secure: false,
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
-      });
+  private async initTransporter() {
+    if (this.transporter || this.isInitializing) {
+      return this.initPromise;
     }
+
+    this.isInitializing = true;
+    
+    this.initPromise = (async () => {
+      try {
+        // For development, use ethereal email (fake SMTP)
+        // In production, replace with your actual email service credentials
+        const isDevelopment = process.env.NODE_ENV === 'development';
+        
+        if (isDevelopment) {
+          console.log('Creating test email account for development...');
+          const testAccount = await nodemailer.createTestAccount();
+          this.transporter = nodemailer.createTransport({
+            host: 'smtp.ethereal.email',
+            port: 587,
+            secure: false,
+            auth: {
+              user: testAccount.user,
+              pass: testAccount.pass,
+            },
+          });
+          console.log('Test email account created:', testAccount.user);
+        } else {
+          // Production email configuration
+          this.transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
+            port: parseInt(process.env.SMTP_PORT || '587'),
+            secure: false,
+            auth: {
+              user: process.env.SMTP_USER,
+              pass: process.env.SMTP_PASS,
+            },
+          });
+        }
+        console.log('Email service initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize email service:', error);
+      } finally {
+        this.isInitializing = false;
+      }
+    })();
+
+    return this.initPromise;
   }
 
   async sendAppointmentConfirmation(appointmentData: AppointmentEmailData): Promise<boolean> {
+    // Ensure transporter is initialized
+    await this.initTransporter();
+    
     if (!this.transporter) {
-      console.log('Email transporter not initialized');
+      console.log('Email transporter failed to initialize');
       return false;
     }
 

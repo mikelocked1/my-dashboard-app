@@ -311,14 +311,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Send email confirmation
       try {
+        console.log('Attempting to send confirmation email...');
         // Get patient and doctor information for email
-        const patient = await storage.getUser(appointmentData.patientId);
+        const patient = await storage.getUserById(appointmentData.patientId);
         const doctor = await storage.getDoctorById(appointmentData.doctorId);
+        
+        console.log('Patient data:', patient ? { id: patient.id, name: patient.name, email: patient.email } : 'null');
+        console.log('Doctor data:', doctor ? { id: doctor.id, name: doctor.user?.name, specialty: doctor.specialty } : 'null');
         
         if (patient && doctor) {
           const appointmentDateTime = new Date(appointmentData.appointmentDate);
           
-          await emailService.sendAppointmentConfirmation({
+          const emailData = {
             patientName: patient.name,
             patientEmail: patient.email,
             doctorName: doctor.user.name,
@@ -328,7 +332,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             consultationFee: appointmentData.consultationFee.toString(),
             isVideoCall: appointmentData.isVideoCall || false,
             appointmentType: appointmentData.type || "consultation"
-          });
+          };
+          
+          console.log('Sending email with data:', emailData);
+          const emailSent = await emailService.sendAppointmentConfirmation(emailData);
+          console.log('Email sent result:', emailSent);
+        } else {
+          console.log('Missing patient or doctor data - cannot send email');
         }
       } catch (emailError) {
         // Don't fail the appointment creation if email fails
