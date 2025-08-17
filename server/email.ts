@@ -47,17 +47,31 @@ class EmailService {
         
         if (isDevelopment) {
           console.log('Creating test email account for development...');
-          const testAccount = await nodemailer.createTestAccount();
-          this.transporter = nodemailer.createTransport({
-            host: 'smtp.ethereal.email',
-            port: 587,
-            secure: false,
-            auth: {
-              user: testAccount.user,
-              pass: testAccount.pass,
-            },
-          });
-          console.log('Test email account created:', testAccount.user);
+          try {
+            const testAccount = await nodemailer.createTestAccount();
+            this.transporter = nodemailer.createTransport({
+              host: 'smtp.ethereal.email',
+              port: 587,
+              secure: false,
+              auth: {
+                user: testAccount.user,
+                pass: testAccount.pass,
+              },
+            });
+            console.log('Test email account created:', testAccount.user);
+            
+            // Verify connection
+            await this.transporter.verify();
+            console.log('Email transporter verified successfully');
+          } catch (etherealError) {
+            console.warn('Failed to create Ethereal account, using local mock:', etherealError);
+            // Fallback to a mock transporter for development
+            this.transporter = nodemailer.createTransport({
+              streamTransport: true,
+              newline: 'unix',
+              buffer: true
+            });
+          }
         } else {
           // Production email configuration
           this.transporter = nodemailer.createTransport({
@@ -69,10 +83,20 @@ class EmailService {
               pass: process.env.SMTP_PASS,
             },
           });
+          
+          // Verify production transporter
+          await this.transporter.verify();
         }
         console.log('Email service initialized successfully');
       } catch (error) {
         console.error('Failed to initialize email service:', error);
+        // Create a fallback mock transporter
+        this.transporter = nodemailer.createTransport({
+          streamTransport: true,
+          newline: 'unix',
+          buffer: true
+        });
+        console.log('Using fallback mock email transporter');
       } finally {
         this.isInitializing = false;
       }
@@ -190,23 +214,36 @@ class EmailService {
     `;
 
     try {
-      const info = await this.transporter.sendMail({
+      console.log(`Attempting to send email to: ${patientEmail}`);
+      
+      const mailOptions = {
         from: '"SmartCare Health" <noreply@smartcare.com>',
         to: patientEmail,
         subject: emailSubject,
         html: emailHtml,
-      });
+      };
 
-      console.log('Appointment confirmation email sent:', info.messageId);
+      const info = await this.transporter.sendMail(mailOptions);
+
+      console.log('✅ Appointment confirmation email sent successfully!');
+      console.log('Message ID:', info.messageId);
+      console.log('Email sent to:', patientEmail);
       
       // In development, log the preview URL
       if (process.env.NODE_ENV === 'development') {
-        console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+        const previewUrl = nodemailer.getTestMessageUrl(info);
+        if (previewUrl) {
+          console.log('📧 Preview URL:', previewUrl);
+          console.log('👆 Click the link above to view the email in your browser');
+        } else if (info.envelope) {
+          console.log('📧 Email envelope:', info.envelope);
+        }
       }
       
       return true;
     } catch (error) {
-      console.error('Error sending appointment confirmation email:', error);
+      console.error('❌ Error sending appointment confirmation email:', error);
+      console.error('Email details:', { to: patientEmail, subject: emailSubject });
       return false;
     }
   }

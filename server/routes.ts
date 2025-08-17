@@ -311,15 +311,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Send email confirmation
       try {
-        console.log('Attempting to send confirmation email...');
+        console.log('🔄 Starting email confirmation process...');
         // Get patient and doctor information for email
         const patient = await storage.getUserById(appointmentData.patientId);
         const doctor = await storage.getDoctorById(appointmentData.doctorId);
         
-        console.log('Patient data:', patient ? { id: patient.id, name: patient.name, email: patient.email } : 'null');
-        console.log('Doctor data:', doctor ? { id: doctor.id, name: doctor.user?.name, specialty: doctor.specialty } : 'null');
+        console.log('👤 Patient data:', patient ? { id: patient.id, name: patient.name, email: patient.email } : 'NOT FOUND');
+        console.log('👨‍⚕️ Doctor data:', doctor ? { id: doctor.id, name: doctor.user?.name, specialty: doctor.specialty } : 'NOT FOUND');
         
-        if (patient && doctor) {
+        if (patient && doctor && patient.email) {
           const appointmentDateTime = new Date(appointmentData.appointmentDate);
           
           const emailData = {
@@ -334,15 +334,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
             appointmentType: appointmentData.type || "consultation"
           };
           
-          console.log('Sending email with data:', emailData);
+          console.log('📧 Preparing to send email with data:', {
+            to: emailData.patientEmail,
+            doctor: emailData.doctorName,
+            date: emailData.appointmentDate,
+            time: emailData.appointmentTime
+          });
+          
           const emailSent = await emailService.sendAppointmentConfirmation(emailData);
-          console.log('Email sent result:', emailSent);
+          
+          if (emailSent) {
+            console.log('✅ Email confirmation sent successfully!');
+          } else {
+            console.log('❌ Email confirmation failed to send');
+          }
         } else {
-          console.log('Missing patient or doctor data - cannot send email');
+          if (!patient) console.log('❌ Patient not found - cannot send email');
+          if (!doctor) console.log('❌ Doctor not found - cannot send email');
+          if (patient && !patient.email) console.log('❌ Patient email is missing - cannot send email');
         }
       } catch (emailError) {
         // Don't fail the appointment creation if email fails
-        console.error("Failed to send confirmation email:", emailError);
+        console.error("❌ Failed to send confirmation email:", emailError);
       }
       
       res.status(201).json(appointment);
