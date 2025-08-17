@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { emailService } from "./email";
 import { 
   insertUserSchema, 
   insertDoctorSchema, 
@@ -10,6 +11,7 @@ import {
   insertAiHealthTipSchema 
 } from "@shared/schema";
 import { z } from "zod";
+import { format } from "date-fns";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // User routes
@@ -306,6 +308,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const appointmentData = insertAppointmentSchema.parse(req.body);
       console.log("Parsed appointment data:", appointmentData);
       const appointment = await storage.createAppointment(appointmentData);
+      
+      // Send email confirmation
+      try {
+        // Get patient and doctor information for email
+        const patient = await storage.getUser(appointmentData.patientId);
+        const doctor = await storage.getDoctorById(appointmentData.doctorId);
+        
+        if (patient && doctor) {
+          const appointmentDateTime = new Date(appointmentData.appointmentDate);
+          
+          await emailService.sendAppointmentConfirmation({
+            patientName: patient.name,
+            patientEmail: patient.email,
+            doctorName: doctor.user.name,
+            appointmentDate: format(appointmentDateTime, "EEEE, MMMM do, yyyy"),
+            appointmentTime: format(appointmentDateTime, "h:mm a"),
+            specialty: doctor.specialty,
+            consultationFee: appointmentData.consultationFee.toString(),
+            isVideoCall: appointmentData.isVideoCall || false,
+            appointmentType: appointmentData.type || "consultation"
+          });
+        }
+      } catch (emailError) {
+        // Don't fail the appointment creation if email fails
+        console.error("Failed to send confirmation email:", emailError);
+      }
+      
       res.status(201).json(appointment);
     } catch (error) {
       if (error instanceof z.ZodError) {

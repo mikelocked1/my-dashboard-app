@@ -20,7 +20,7 @@ const DoctorBooking: React.FC = () => {
   const { currentUser, userProfile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<string>("");
@@ -35,10 +35,10 @@ const DoctorBooking: React.FC = () => {
       console.log("Booking data:", bookingData);
       console.log("User profile:", userProfile);
       console.log("Available doctors:", doctors);
-      
+
       const doctor = doctors?.find((d: any) => d.id === parseInt(bookingData.doctorId));
       if (!doctor) throw new Error("Doctor not found");
-      
+
       // Check doctor availability
       if (!doctor.isAvailable) {
         throw new Error("Selected doctor is currently unavailable");
@@ -61,7 +61,7 @@ const DoctorBooking: React.FC = () => {
         isVideoCall: false,
         patientNotes: null,
       };
-      
+
       console.log("Appointment payload:", appointmentPayload);
 
       return apiRequest("/api/appointments", {
@@ -73,13 +73,13 @@ const DoctorBooking: React.FC = () => {
       console.log("Appointment created successfully:", data);
       toast({
         title: "Booking Confirmed",
-        description: "Your appointment has been scheduled successfully.",
+        description: "Appointment confirmed! Check your email for confirmation details.",
       });
-      // Invalidate all appointment-related queries
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/appointments/patient/${userProfile?.id}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/appointments/upcoming/${userProfile?.id}`] });
-      
+
+      // Invalidate and refetch appointment-related queries
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/patient"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/upcoming"] });
+
       // Reset form
       setSelectedDoctor(null);
       setSelectedDate("");
@@ -208,7 +208,7 @@ const DoctorBooking: React.FC = () => {
               ))}
             </div>
           </div>
-          
+
           {/* Date Selection */}
           <div>
             <h4 className="font-medium text-gray-900 dark:text-white mb-4">
@@ -240,7 +240,7 @@ const DoctorBooking: React.FC = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Time Selection */}
           <div>
             <h4 className="font-medium text-gray-900 dark:text-white mb-4">
@@ -250,7 +250,7 @@ const DoctorBooking: React.FC = () => {
               {availableTimes.map((time) => (
                 <button
                   key={time}
-                  className={`w-full p-3 text-sm border rounded-lg transition-colors text-left ${
+                  className={`w-full p-3 text-sm border rounded-lg transition-colors ${
                     selectedTime === time
                       ? "bg-primary/10 border-2 border-primary"
                       : "border-gray-200 dark:border-gray-600 hover:border-primary hover:bg-primary/5"
@@ -272,7 +272,7 @@ const DoctorBooking: React.FC = () => {
                 </button>
               ))}
             </div>
-            
+
             {/* Booking Confirmation */}
             {selectedDoctor && selectedDate && selectedTime && (
               <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">

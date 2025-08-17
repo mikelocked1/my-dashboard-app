@@ -66,7 +66,7 @@ const DoctorSelection: React.FC = () => {
   const { userProfile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [selectedSpecialty, setSelectedSpecialty] = useState("All Specialties");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
@@ -96,15 +96,20 @@ const DoctorSelection: React.FC = () => {
     },
     onSuccess: () => {
       toast({
-        title: "Appointment booked successfully",
-        description: "You will receive a confirmation email shortly.",
+        title: "Appointment Booked",
+        description: "Your appointment has been successfully scheduled. Check your email for confirmation details.",
       });
-      setShowBookingForm(false);
+
+      // Invalidate and refetch appointment-related queries
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/patient"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/upcoming"] });
+
+      // Reset form
       setSelectedDoctor(null);
       setSelectedDate(undefined);
       setSelectedTime("");
       setPatientNotes("");
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      setShowBookingForm(false); // Also close the booking form
     },
     onError: (error) => {
       toast({
@@ -126,21 +131,21 @@ const DoctorSelection: React.FC = () => {
     const slots = [];
     const startHour = 9;
     const endHour = 17;
-    
+
     for (let hour = startHour; hour < endHour; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         const timeSlot = setMinutes(setHours(new Date(), hour), minute);
         const timeString = format(timeSlot, "HH:mm");
-        
+
         // Skip past time slots for today
         if (format(date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")) {
           if (isBefore(timeSlot, new Date())) continue;
         }
-        
+
         slots.push(timeString);
       }
     }
-    
+
     return slots;
   };
 
@@ -250,7 +255,7 @@ const DoctorSelection: React.FC = () => {
                           {doctor.user.name.split(' ').map(n => n[0]).join('')}
                         </AvatarFallback>
                       </Avatar>
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-2">
                           <h3 className="text-lg font-semibold text-gray-900 dark:text-white" data-testid={`doctor-name-${doctor.id}`}>
@@ -262,21 +267,21 @@ const DoctorSelection: React.FC = () => {
                             <span>({doctor.reviewCount} reviews)</span>
                           </div>
                         </div>
-                        
+
                         <div className="space-y-2 mb-4">
                           <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                             <Stethoscope className="w-4 h-4" />
                             <span>{doctor.specialty}</span>
                             <Badge variant="outline">{doctor.experience} years experience</Badge>
                           </div>
-                          
+
                           {doctor.education && doctor.education.length > 0 && (
                             <div className="flex items-start space-x-2 text-sm text-gray-600 dark:text-gray-400">
                               <GraduationCap className="w-4 h-4 mt-0.5" />
                               <span>{doctor.education[0]}</span>
                             </div>
                           )}
-                          
+
                           {doctor.languages && doctor.languages.length > 0 && (
                             <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                               <Languages className="w-4 h-4" />
@@ -284,11 +289,11 @@ const DoctorSelection: React.FC = () => {
                             </div>
                           )}
                         </div>
-                        
+
                         <p className="text-sm text-gray-700 dark:text-gray-300 mb-4 line-clamp-2" data-testid={`doctor-bio-${doctor.id}`}>
                           {doctor.bio}
                         </p>
-                        
+
                         <div className="flex items-center justify-between">
                           <div className="text-lg font-semibold text-primary">
                             GHS {doctor.consultationFee} per consultation
@@ -338,7 +343,7 @@ const DoctorSelection: React.FC = () => {
                   className="rounded-md border"
                 />
               </div>
-              
+
               {/* Time Selection */}
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -361,7 +366,7 @@ const DoctorSelection: React.FC = () => {
                     <p className="text-sm text-gray-500">Please select a date first</p>
                   )}
                 </div>
-                
+
                 {/* Appointment Type */}
                 <div className="space-y-2">
                   <Label>Appointment Type</Label>
@@ -377,7 +382,7 @@ const DoctorSelection: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 {/* Video Call Option */}
                 <div className="flex items-center space-x-2">
                   <input
@@ -395,7 +400,7 @@ const DoctorSelection: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Patient Notes */}
             <div className="space-y-2">
               <Label htmlFor="patient-notes">Additional Notes (Optional)</Label>
@@ -408,7 +413,7 @@ const DoctorSelection: React.FC = () => {
                 data-testid="textarea-patient-notes"
               />
             </div>
-            
+
             {/* Summary */}
             {selectedDate && selectedTime && (
               <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -422,7 +427,7 @@ const DoctorSelection: React.FC = () => {
                 </div>
               </div>
             )}
-            
+
             <Button 
               onClick={handleBookAppointment}
               className="w-full"
