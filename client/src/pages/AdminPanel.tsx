@@ -96,13 +96,13 @@ const AdminPanel: React.FC = () => {
     return urlParams.get('tab') || 'pending';
   };
   
-  const [activeTab, setActiveTab] = useState(getTabFromUrl());
+  const [activeTab, setActiveTab] = useState("pending");
   const [showAddDoctor, setShowAddDoctor] = useState(false);
 
-  // Update tab based on URL changes
-  useEffect(() => {
-    setActiveTab(getTabFromUrl());
-  }, [location]);
+  // Simple tab state management
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
 
   // Fetch all users for admin management
   const { data: allUsers, isLoading: usersLoading } = useQuery<User[]>({
@@ -139,10 +139,10 @@ const AdminPanel: React.FC = () => {
     );
   }
 
-  // Fetch all doctors
+  // Fetch all doctors (approved doctors for the "All Doctors" tab)
   const { data: doctors, isLoading } = useQuery<Doctor[]>({
     queryKey: ["/api/doctors"],
-    queryFn: () => apiRequest("/api/doctors?approved=false"),
+    queryFn: () => apiRequest("/api/doctors"),
   });
 
   // Fetch pending doctors for approval
@@ -353,7 +353,7 @@ const AdminPanel: React.FC = () => {
         </Badge>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList data-testid="admin-tabs" className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="pending" className="flex items-center justify-center">
             <AlertCircle className="w-4 h-4 mr-2" />
