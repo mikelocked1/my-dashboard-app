@@ -26,6 +26,30 @@ const Login: React.FC = () => {
   const [registerName, setRegisterName] = useState("");
   const [registerRole, setRegisterRole] = useState<"user" | "doctor">("user");
 
+  // Doctor-specific registration fields
+  const [doctorSpecialty, setDoctorSpecialty] = useState("");
+  const [doctorExperience, setDoctorExperience] = useState(1);
+  const [doctorConsultationFee, setDoctorConsultationFee] = useState("");
+  const [doctorBio, setDoctorBio] = useState("");
+  const [doctorEducation, setDoctorEducation] = useState("");
+  const [doctorLanguages, setDoctorLanguages] = useState("English");
+
+  const specialties = [
+    "General Practice",
+    "Cardiology", 
+    "Dermatology",
+    "Endocrinology",
+    "Gastroenterology",
+    "Neurology",
+    "Orthopedics",
+    "Pediatrics",
+    "Psychiatry",
+    "Pulmonology",
+    "Rheumatology",
+    "Urology",
+    "Internal Medicine"
+  ];
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -114,12 +138,77 @@ const Login: React.FC = () => {
 
     setIsLoading(true);
 
+    // Additional validation for doctors
+    if (registerRole === "doctor") {
+      if (!doctorSpecialty) {
+        toast({
+          title: "Validation Error",
+          description: "Please select your medical specialty.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!doctorConsultationFee.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Please enter your consultation fee.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (isNaN(Number(doctorConsultationFee)) || Number(doctorConsultationFee) <= 0) {
+        toast({
+          title: "Validation Error",
+          description: "Please enter a valid consultation fee.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!doctorBio.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Please provide a brief bio about yourself.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!doctorEducation.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Please provide your educational background.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+    }
+
     try {
+      // Prepare doctor information if registering as a doctor
+      const doctorInfo = registerRole === "doctor" ? {
+        specialty: doctorSpecialty,
+        experience: doctorExperience,
+        consultationFee: doctorConsultationFee,
+        bio: doctorBio.trim(),
+        education: doctorEducation.trim(),
+        languages: doctorLanguages.trim()
+      } : undefined;
+
       // Attempt to register the user
-      await register(registerEmail.trim(), registerPassword, registerName.trim(), registerRole);
+      await register(registerEmail.trim(), registerPassword, registerName.trim(), registerRole, doctorInfo);
       toast({
         title: "Registration Successful",
-        description: "Your account has been created successfully!",
+        description: registerRole === "doctor" 
+          ? "Your doctor account has been created and is pending approval!" 
+          : "Your account has been created successfully!",
       });
     } catch (error: any) {
       // Log the specific email being attempted for registration for better debugging
@@ -287,6 +376,101 @@ const Login: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Doctor-specific fields */}
+                  {registerRole === "doctor" && (
+                    <>
+                      <div>
+                        <Label htmlFor="doctor-specialty">Medical Specialty *</Label>
+                        <Select value={doctorSpecialty} onValueChange={setDoctorSpecialty}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select your specialty" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {specialties.map((specialty) => (
+                              <SelectItem key={specialty} value={specialty}>
+                                {specialty}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="doctor-experience">Years of Experience</Label>
+                        <Input
+                          id="doctor-experience"
+                          type="number"
+                          min="1"
+                          max="50"
+                          placeholder="Years of experience"
+                          value={doctorExperience}
+                          onChange={(e) => setDoctorExperience(Number(e.target.value))}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="doctor-consultation-fee">Consultation Fee (GHS) *</Label>
+                        <Input
+                          id="doctor-consultation-fee"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="e.g., 150.00"
+                          value={doctorConsultationFee}
+                          onChange={(e) => setDoctorConsultationFee(e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="doctor-bio">Professional Bio *</Label>
+                        <textarea
+                          id="doctor-bio"
+                          placeholder="Brief description of your expertise and approach to patient care"
+                          value={doctorBio}
+                          onChange={(e) => setDoctorBio(e.target.value)}
+                          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          maxLength={500}
+                          required
+                        />
+                        <p className="text-xs text-gray-500 mt-1">{doctorBio.length}/500 characters</p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="doctor-education">Education & Qualifications *</Label>
+                        <textarea
+                          id="doctor-education"
+                          placeholder="e.g., MD from University of Ghana, Residency at Korle Bu Teaching Hospital"
+                          value={doctorEducation}
+                          onChange={(e) => setDoctorEducation(e.target.value)}
+                          className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          maxLength={300}
+                          required
+                        />
+                        <p className="text-xs text-gray-500 mt-1">{doctorEducation.length}/300 characters</p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="doctor-languages">Languages Spoken</Label>
+                        <Input
+                          id="doctor-languages"
+                          type="text"
+                          placeholder="e.g., English, Twi, French"
+                          value={doctorLanguages}
+                          onChange={(e) => setDoctorLanguages(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                          📋 Your doctor account will be reviewed by an administrator before approval. 
+                          You'll receive an email notification once your account is verified.
+                        </p>
+                      </div>
+                    </>
+                  )}
 
                   <Button
                     type="submit"

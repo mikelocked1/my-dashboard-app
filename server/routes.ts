@@ -35,19 +35,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If user registered as a doctor, create doctor profile with pending status
       if (userData.role === "doctor") {
-        const defaultDoctorData = {
-          userId: user.id,
-          specialty: "General Practice", // Default, will be updated during profile completion
-          experience: 0,
-          consultationFee: "0.00",
-          bio: "",
-          education: [],
-          languages: ["English"],
-          status: "pending" as const,
-          isAvailable: false, // Not available until approved
-        };
+        // Check if doctor profile already exists (might be created by client)
+        let existingDoctor = null;
+        try {
+          existingDoctor = await storage.getDoctorByUserId(user.id);
+        } catch (error) {
+          // Doctor profile doesn't exist, we'll create one
+        }
         
-        await storage.createDoctor(defaultDoctorData);
+        if (!existingDoctor) {
+          const defaultDoctorData = {
+            userId: user.id,
+            specialty: "General Practice", // Default, will be updated during profile completion
+            experience: 0,
+            consultationFee: "0.00",
+            bio: "",
+            education: [],
+            languages: ["English"],
+            status: "pending" as const,
+            isAvailable: false, // Not available until approved
+          };
+          
+          await storage.createDoctor(defaultDoctorData);
+        }
       }
       
       res.status(201).json(user);

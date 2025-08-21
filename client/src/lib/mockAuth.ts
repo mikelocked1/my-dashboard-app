@@ -77,7 +77,7 @@ export class MockAuth {
 
   async signInWithEmailAndPassword(email: string, password: string): Promise<{ user: MockUser }> {
     console.log("Attempting to sign in with:", { email, password: '***' });
-    
+
     if (!email || !password) {
       const error = new Error("Email and password are required");
       console.error("Sign in failed:", error.message);
@@ -86,7 +86,7 @@ export class MockAuth {
 
     const users = this.getUsers();
     console.log("Available users:", users.map(u => ({ email: u.email, uid: u.uid })));
-    
+
     const user = users.find(u => u.email === email && u.password === password);
     console.log("Found user:", user ? { email: user.email, uid: user.uid } : null);
 
@@ -112,7 +112,7 @@ export class MockAuth {
 
   async createUserWithEmailAndPassword(email: string, password: string): Promise<{ user: MockUser }> {
     console.log("Attempting to create user with:", { email, password: '***' });
-    
+
     if (!email || !password) {
       const error = new Error("Email and password are required");
       console.error("Registration failed:", error.message);

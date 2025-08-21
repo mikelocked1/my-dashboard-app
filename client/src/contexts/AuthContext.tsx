@@ -7,7 +7,20 @@ interface AuthContextType {
   currentUser: MockUser | null;
   userProfile: User | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string, role: "user" | "doctor") => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    name: string,
+    role: "user" | "doctor",
+    doctorInfo?: {
+      specialty: string;
+      experience: number;
+      consultationFee: string;
+      bio: string;
+      education: string;
+      languages: string;
+    }
+  ) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
 }
@@ -36,32 +49,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, password: string, name: string, role: "user" | "doctor") => {
+  const register = async (
+    email: string,
+    password: string,
+    name: string,
+    role: "user" | "doctor" = "user",
+    doctorInfo?: {
+      specialty: string;
+      experience: number;
+      consultationFee: string;
+      bio: string;
+      education: string;
+      languages: string;
+    }
+  ): Promise<void> => {
     try {
-      const { user } = await mockAuth.createUserWithEmailAndPassword(email, password);
-      setCurrentUser(user);
+      const { user: firebaseUser } = await mockAuth.createUserWithEmailAndPassword(email, password);
+      setCurrentUser(firebaseUser);
 
-      // Create user profile in our database
-      const response = await fetch("/api/users", {
+      // Create user in database
+      const userData = {
+        firebaseUid: firebaseUser.uid,
+        email: firebaseUser.email!,
+        name,
+        role,
+      };
+
+      const response = await apiRequest("/api/users", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          firebaseUid: user.uid,
-          email: user.email || email,
-          name,
-          role,
-        }),
+        body: JSON.stringify(userData),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
-        throw new Error(errorData.error || "Failed to create user profile");
+      if (!response.id) {
+        throw new Error("Failed to create user in database");
       }
 
-      const userProfile = await response.json();
-      setUserProfile(userProfile);
+      // If registering as a doctor with additional info, create/update doctor profile
+      if (role === "doctor" && doctorInfo) {
+        const doctorData = {
+          userId: response.id,
+          specialty: doctorInfo.specialty,
+          experience: doctorInfo.experience,
+          consultationFee: doctorInfo.consultationFee,
+          bio: doctorInfo.bio,
+          education: doctorInfo.education.split(',').map(edu => edu.trim()).filter(edu => edu),
+          languages: doctorInfo.languages.split(',').map(lang => lang.trim()).filter(lang => lang),
+          status: "pending",
+          isAvailable: false,
+        };
+
+        try {
+          await apiRequest("/api/doctors", {
+            method: "POST",
+            body: JSON.stringify(doctorData),
+          });
+        } catch (doctorError) {
+          console.error("Failed to create doctor profile:", doctorError);
+          // Don't throw error here as user account was already created
+        }
+      }
+
+      setUserProfile(response);
 
     } catch (error: any) {
       console.error("Error during registration:", error);
