@@ -87,8 +87,11 @@ const DoctorDashboard: React.FC = () => {
     queryKey: ["/api/doctors/profile", userProfile?.id],
     queryFn: async () => {
       if (!userProfile?.id) return null;
+      console.log("Fetching doctor profile for user ID:", userProfile.id);
       const doctors = await apiRequest("/api/doctors");
+      console.log("All doctors:", doctors);
       const doctor = doctors.find((d: any) => d.user.id === userProfile.id);
+      console.log("Found doctor profile:", doctor);
       return doctor;
     },
     enabled: !!userProfile?.id,
