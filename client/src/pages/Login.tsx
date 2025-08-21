@@ -12,14 +12,14 @@ import { useToast } from "@/hooks/use-toast";
 const Login: React.FC = () => {
   const { login, register } = useAuth();
   const { toast } = useToast();
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  
+
   // Register state
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
@@ -28,7 +28,7 @@ const Login: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate inputs
     if (!loginEmail.trim()) {
       toast({
@@ -38,7 +38,7 @@ const Login: React.FC = () => {
       });
       return;
     }
-    
+
     if (!loginPassword.trim()) {
       toast({
         title: "Validation Error",
@@ -47,20 +47,24 @@ const Login: React.FC = () => {
       });
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
+      // Attempt to login the user
       await login(loginEmail.trim(), loginPassword);
       toast({
         title: "Login Successful",
         description: "Welcome back to SmartCare!",
       });
     } catch (error: any) {
-      console.error("Login error:", error);
+      // Log the specific email being attempted for login for better debugging
+      console.error(`Login attempt failed for email: ${loginEmail.trim()}`);
+      console.error("Login error details:", error);
+      // Provide a more user-friendly error message
       toast({
         title: "Login Failed",
-        description: error.message || "Invalid email or password.",
+        description: error.message || "Invalid email or password. Please check your credentials.",
         variant: "destructive",
       });
     } finally {
@@ -70,7 +74,7 @@ const Login: React.FC = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate inputs
     if (!registerName.trim()) {
       toast({
@@ -80,7 +84,7 @@ const Login: React.FC = () => {
       });
       return;
     }
-    
+
     if (!registerEmail.trim()) {
       toast({
         title: "Validation Error",
@@ -89,7 +93,7 @@ const Login: React.FC = () => {
       });
       return;
     }
-    
+
     if (!registerPassword.trim()) {
       toast({
         title: "Validation Error",
@@ -98,7 +102,7 @@ const Login: React.FC = () => {
       });
       return;
     }
-    
+
     if (registerPassword.length < 6) {
       toast({
         title: "Validation Error",
@@ -107,20 +111,24 @@ const Login: React.FC = () => {
       });
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
+      // Attempt to register the user
       await register(registerEmail.trim(), registerPassword, registerName.trim(), registerRole);
       toast({
         title: "Registration Successful",
         description: "Your account has been created successfully!",
       });
     } catch (error: any) {
-      console.error("Registration error:", error);
+      // Log the specific email being attempted for registration for better debugging
+      console.error(`Registration attempt failed for email: ${registerEmail.trim()}`);
+      console.error("Registration error details:", error);
+      // Provide a more user-friendly error message
       toast({
         title: "Registration Failed",
-        description: error.message || "An error occurred during registration.",
+        description: error.message || "An error occurred during registration. The email might already be in use.",
         variant: "destructive",
       });
     } finally {
@@ -170,7 +178,7 @@ const Login: React.FC = () => {
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="register">Register</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
@@ -184,7 +192,7 @@ const Login: React.FC = () => {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="login-password">Password</Label>
                     <div className="relative">
@@ -207,7 +215,7 @@ const Login: React.FC = () => {
                       </Button>
                     </div>
                   </div>
-                  
+
                   <Button
                     type="submit"
                     className="w-full bg-primary hover:bg-orange-600 text-white"
@@ -217,7 +225,7 @@ const Login: React.FC = () => {
                   </Button>
                 </form>
               </TabsContent>
-              
+
               <TabsContent value="register">
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div>
@@ -231,7 +239,7 @@ const Login: React.FC = () => {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="register-email">Email</Label>
                     <Input
@@ -243,7 +251,7 @@ const Login: React.FC = () => {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="register-password">Password</Label>
                     <div className="relative">
@@ -266,7 +274,7 @@ const Login: React.FC = () => {
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="register-role">Role</Label>
                     <Select value={registerRole} onValueChange={(value: "user" | "doctor") => setRegisterRole(value)}>
@@ -279,7 +287,7 @@ const Login: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <Button
                     type="submit"
                     className="w-full bg-primary hover:bg-orange-600 text-white"
@@ -292,7 +300,7 @@ const Login: React.FC = () => {
             </Tabs>
           </CardContent>
         </Card>
-        
+
         {/* Footer */}
         <div className="text-center mt-6 text-sm text-gray-600 dark:text-gray-400">
           <p>© 2024 SmartCare. All rights reserved.</p>

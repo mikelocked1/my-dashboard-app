@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { user } = await mockAuth.createUserWithEmailAndPassword(email, password);
       setCurrentUser(user);
-      
+
       // Create user profile in our database
       const response = await fetch("/api/users", {
         method: "POST",
@@ -54,15 +54,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role,
         }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
         throw new Error(errorData.error || "Failed to create user profile");
       }
-      
+
       const userProfile = await response.json();
       setUserProfile(userProfile);
-      
+
     } catch (error: any) {
       console.error("Error during registration:", error);
       // If database creation fails, clean up the auth user
@@ -83,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const unsubscribe = mockAuth.onAuthStateChanged((user) => {
       setCurrentUser(user);
-      
+
       if (user) {
         // Fetch or create user profile
         const fetchUserProfile = async () => {
@@ -106,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   role: "user",
                 }),
               });
-              
+
               if (createResponse.ok) {
                 const newProfile = await createResponse.json();
                 setUserProfile(newProfile);
@@ -125,7 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setLoading(false);
           }
         };
-        
+
         fetchUserProfile();
       } else {
         setUserProfile(null);

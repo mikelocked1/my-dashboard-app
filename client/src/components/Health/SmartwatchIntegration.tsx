@@ -113,8 +113,8 @@ const SmartwatchIntegration: React.FC = () => {
                 <Watch className="w-16 h-16 mx-auto mb-2 opacity-50" />
                 <p>Connect your Apple Watch or compatible smartwatch to automatically sync health data.</p>
               </div>
-              <Button 
-                onClick={handleConnect} 
+              <Button
+                onClick={handleConnect}
                 disabled={isConnecting}
                 className="w-full"
               >

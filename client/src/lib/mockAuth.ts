@@ -40,6 +40,19 @@ export class MockAuth {
   private listeners: Array<(user: MockUser | null) => void> = [];
   private STORAGE_KEY = 'mockAuthUsers';
 
+  constructor() {
+    // Ensure default users are always available
+    this.initializeDefaultUsers();
+  }
+
+  private initializeDefaultUsers() {
+    const storedUsers = localStorage.getItem(this.STORAGE_KEY);
+    if (!storedUsers) {
+      console.log('Initializing default users...');
+      this.saveUsers(mockUsers);
+    }
+  }
+
   // Helper to get users from localStorage or mockUsers if not found
   private getUsers(): StoredUser[] {
     const storedUsers = localStorage.getItem(this.STORAGE_KEY);
@@ -63,15 +76,24 @@ export class MockAuth {
   }
 
   async signInWithEmailAndPassword(email: string, password: string): Promise<{ user: MockUser }> {
+    console.log("Attempting to sign in with:", { email, password: '***' });
+    
     if (!email || !password) {
-      throw new Error("Email and password are required");
+      const error = new Error("Email and password are required");
+      console.error("Sign in failed:", error.message);
+      throw error;
     }
 
     const users = this.getUsers();
+    console.log("Available users:", users.map(u => ({ email: u.email, uid: u.uid })));
+    
     const user = users.find(u => u.email === email && u.password === password);
+    console.log("Found user:", user ? { email: user.email, uid: user.uid } : null);
 
     if (!user) {
-      throw new Error("Invalid email or password");
+      const error = new Error("Invalid email or password");
+      console.error("Sign in failed:", error.message);
+      throw error;
     }
 
     const authUser: MockUser = {
@@ -82,25 +104,35 @@ export class MockAuth {
     };
 
     this.currentUser = authUser;
+    console.log("Successfully signed in user:", authUser);
     this.notifyListeners(); // Use the existing notifyListeners method
 
     return { user: authUser };
   }
 
   async createUserWithEmailAndPassword(email: string, password: string): Promise<{ user: MockUser }> {
+    console.log("Attempting to create user with:", { email, password: '***' });
+    
     if (!email || !password) {
-      throw new Error("Email and password are required");
+      const error = new Error("Email and password are required");
+      console.error("Registration failed:", error.message);
+      throw error;
     }
 
     if (password.length < 6) {
-      throw new Error("Password must be at least 6 characters long");
+      const error = new Error("Password must be at least 6 characters long");
+      console.error("Registration failed:", error.message);
+      throw error;
     }
 
     const users = this.getUsers();
     const existingUser = users.find(u => u.email === email);
+    console.log("Checking existing user:", existingUser ? { email: existingUser.email } : null);
 
     if (existingUser) {
-      throw new Error("Email already in use");
+      const error = new Error("Email already in use");
+      console.error("Registration failed:", error.message);
+      throw error;
     }
 
     const uid = `user${Date.now()}`;
@@ -114,6 +146,7 @@ export class MockAuth {
 
     users.push(newUser);
     this.saveUsers(users); // Use saveUsers helper
+    console.log("Created new user:", { email: newUser.email, uid: newUser.uid });
 
     const authUser: MockUser = {
       uid: newUser.uid,
@@ -123,6 +156,7 @@ export class MockAuth {
     };
 
     this.currentUser = authUser;
+    console.log("Successfully registered user:", authUser);
     this.notifyListeners(); // Use the existing notifyListeners method
 
     return { user: authUser };
