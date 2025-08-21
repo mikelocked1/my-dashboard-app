@@ -539,7 +539,7 @@ export class DatabaseStorage implements IStorage {
       return result.map((row: any) => ({
         ...row.appointments,
         doctor: {
-          ...row.doctors!,
+          ...row.doctors,
           user: row.users!
         }
       }));

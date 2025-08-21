@@ -133,6 +133,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/doctors", async (req, res) => {
     try {
       const doctorData = insertDoctorSchema.parse(req.body);
+      // Ensure status is set properly - if not specified, default to approved for admin-created doctors
+      if (!doctorData.status) {
+        doctorData.status = "approved";
+        doctorData.isAvailable = true;
+      }
       const doctor = await storage.createDoctor(doctorData);
       res.status(201).json(doctor);
     } catch (error) {
@@ -482,8 +487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes for doctor management
   app.get("/api/admin/doctors/pending", async (req, res) => {
     try {
-      const doctors = await storage.getDoctors();
-      const pendingDoctors = doctors.filter(doctor => doctor.status === "pending");
+      const pendingDoctors = await storage.getPendingDoctors();
       res.json(pendingDoctors);
     } catch (error) {
       console.error("Error fetching pending doctors:", error);
@@ -672,6 +676,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error seeding data:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Debug endpoint to check all doctors and statuses
+  app.get("/api/admin/debug/doctors", async (req, res) => {
+    try {
+      const allDoctors = await storage.getDoctors();
+      const doctorsByStatus = {
+        pending: allDoctors.filter(d => d.status === "pending"),
+        approved: allDoctors.filter(d => d.status === "approved"),
+        rejected: allDoctors.filter(d => d.status === "rejected"),
+        total: allDoctors.length
+      };
+      res.json(doctorsByStatus);
+    } catch (error) {
+      console.error("Error fetching doctor debug info:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
