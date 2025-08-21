@@ -353,23 +353,23 @@ const AdminPanel: React.FC = () => {
         </Badge>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList data-testid="admin-tabs">
-          <TabsTrigger value="pending">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList data-testid="admin-tabs" className="grid w-full grid-cols-3 mb-6">
+          <TabsTrigger value="pending" className="flex items-center justify-center">
             <AlertCircle className="w-4 h-4 mr-2" />
             Pending Approvals ({pendingDoctors?.length || 0})
           </TabsTrigger>
-          <TabsTrigger value="doctors">
+          <TabsTrigger value="doctors" className="flex items-center justify-center">
             <Stethoscope className="w-4 h-4 mr-2" />
             All Doctors ({doctors?.length || 0})
           </TabsTrigger>
-          <TabsTrigger value="users">
+          <TabsTrigger value="users" className="flex items-center justify-center">
             <Users className="w-4 h-4 mr-2" />
             Users
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pending" data-testid="pending-approvals">
+        <TabsContent value="pending" data-testid="pending-approvals" className="mt-0 w-full">
           <Card>
             <CardHeader>
               <CardTitle>Pending Doctor Approvals</CardTitle>
@@ -465,7 +465,7 @@ const AdminPanel: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="doctors" data-testid="doctors-management">
+        <TabsContent value="doctors" data-testid="doctors-management" className="mt-0 w-full">
           {!showAddDoctor ? (
             <>
               <div className="flex items-center justify-between mb-6">
@@ -684,7 +684,7 @@ const AdminPanel: React.FC = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="users" data-testid="users-management">
+        <TabsContent value="users" data-testid="users-management" className="mt-0 w-full">
           <Card>
             <CardHeader>
               <CardTitle>User Management</CardTitle>
