@@ -89,15 +89,19 @@ const AdminPanel: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [location] = useLocation();
-  
+
   // Parse URL parameters to determine active tab
   const getTabFromUrl = () => {
     const urlParams = new URLSearchParams(location.split('?')[1] || '');
     return urlParams.get('tab') || 'pending';
   };
-  
-  const [activeTab, setActiveTab] = useState("pending");
-  const [showAddDoctor, setShowAddDoctor] = useState(false);
+
+  const [activeTab, setActiveTab] = useState(getTabFromUrl());
+
+  // Update tab when URL changes
+  useEffect(() => {
+    setActiveTab(getTabFromUrl());
+  }, [location]);
 
   // Simple tab state management
   const handleTabChange = (value: string) => {
@@ -257,7 +261,7 @@ const AdminPanel: React.FC = () => {
         name: doctorData.name,
         role: "doctor"
       };
-      
+
       const user = await apiRequest("/api/users", {
         method: "POST",
         body: JSON.stringify(userData),
@@ -308,7 +312,7 @@ const AdminPanel: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.email || !formData.specialty || !formData.consultationFee || !formData.bio) {
       toast({
         title: "Missing Information",
@@ -434,7 +438,7 @@ const AdminPanel: React.FC = () => {
                             Pending
                           </Badge>
                         </div>
-                        
+
                         <div className="flex justify-end space-x-2 mt-4 pt-4 border-t">
                           <Button
                             variant="outline"
@@ -521,7 +525,7 @@ const AdminPanel: React.FC = () => {
                     </CardContent>
                   </Card>
                 ))}
-                
+
                 {(!doctors || doctors.length === 0) && (
                   <Card className="col-span-full">
                     <CardContent className="p-12 text-center">
@@ -565,7 +569,7 @@ const AdminPanel: React.FC = () => {
                         data-testid="input-doctor-name"
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="email">Email Address *</Label>
                       <Input
@@ -578,7 +582,7 @@ const AdminPanel: React.FC = () => {
                         data-testid="input-doctor-email"
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="specialty">Specialty *</Label>
                       <Select value={formData.specialty} onValueChange={(value) => handleInputChange("specialty", value)}>
@@ -594,7 +598,7 @@ const AdminPanel: React.FC = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="experience">Years of Experience *</Label>
                       <Input
@@ -608,7 +612,7 @@ const AdminPanel: React.FC = () => {
                         data-testid="input-doctor-experience"
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="fee">Consultation Fee (GHS) *</Label>
                       <Input
@@ -623,7 +627,7 @@ const AdminPanel: React.FC = () => {
                         data-testid="input-doctor-fee"
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="languages">Languages</Label>
                       <Input
@@ -636,7 +640,7 @@ const AdminPanel: React.FC = () => {
                       <p className="text-sm text-gray-500">Separate multiple languages with commas</p>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="education">Education</Label>
                     <Input
@@ -648,7 +652,7 @@ const AdminPanel: React.FC = () => {
                     />
                     <p className="text-sm text-gray-500">Separate multiple entries with commas</p>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="bio">Bio/Description *</Label>
                     <Textarea
@@ -661,7 +665,7 @@ const AdminPanel: React.FC = () => {
                       data-testid="textarea-doctor-bio"
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-end space-x-4">
                     <Button 
                       type="button" 
@@ -750,7 +754,7 @@ const AdminPanel: React.FC = () => {
                               </div>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center space-x-2">
                             <Select 
                               value={user.role} 
@@ -768,7 +772,7 @@ const AdminPanel: React.FC = () => {
                                 <SelectItem value="admin">Admin</SelectItem>
                               </SelectContent>
                             </Select>
-                            
+
                             {user.role !== 'admin' && (
                               <Button
                                 variant="destructive"

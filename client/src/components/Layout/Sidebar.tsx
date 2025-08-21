@@ -78,7 +78,9 @@ const Sidebar: React.FC = () => {
         <div className="space-y-2">
           {filteredNavigation.map((item) => {
             const Icon = item.icon;
-            const isActive = location === item.href;
+            // Check if current location matches the item href (including query parameters)
+            const isActive = location === item.href || 
+                            (item.href.includes('?') && location.startsWith(item.href.split('?')[0]) && location.includes(item.href.split('?')[1]));
 
             return (
               <Link key={item.key} href={item.href}>
