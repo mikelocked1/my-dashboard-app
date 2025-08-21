@@ -42,7 +42,7 @@ app.use((req, res, next) => {
   if (process.env.NODE_ENV === "development") {
     await storage.seedPreloadedDoctors();
   }
-  
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -51,7 +51,7 @@ app.use((req, res, next) => {
 
     // Log error for debugging
     console.error("Server error:", err);
-    
+
     // Send error response if not already sent
     if (!res.headersSent) {
       res.status(status).json({ message });
@@ -71,12 +71,26 @@ app.use((req, res, next) => {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+  const port = parseInt(process.env.PORT || "5000");
+  // Kill any existing process on the port
+  process.on('SIGTERM', () => {
+    server.close();
+  });
+
+  process.on('SIGINT', () => {
+    server.close();
+  });
+
+  server.listen(port, "0.0.0.0", () => {
+    const formattedTime = new Date().toLocaleTimeString("en-US", {
+      hour12: true,
+      hour: "numeric",
+      minute: "2-digit",
+    });
+
+    console.log(`\n🚀 Server running on port ${port}`);
+    console.log(`📱 Local: http://localhost:${port}`);
+    console.log(`🌐 Network: http://0.0.0.0:${port}`);
+    console.log(`⏰ Started at ${formattedTime}\n`);
   });
 })();

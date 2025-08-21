@@ -482,7 +482,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes for doctor management
   app.get("/api/admin/doctors/pending", async (req, res) => {
     try {
-      const pendingDoctors = await storage.getPendingDoctors();
+      const doctors = await storage.getDoctors();
+      const pendingDoctors = doctors.filter(doctor => doctor.status === "pending");
       res.json(pendingDoctors);
     } catch (error) {
       console.error("Error fetching pending doctors:", error);
@@ -495,7 +496,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doctorId = parseInt(req.params.id);
       const { approvedBy } = req.body;
       
-      const doctor = await storage.approveDoctor(doctorId, approvedBy);
+      const doctor = await storage.updateDoctor(doctorId, {
+        status: "approved",
+        approvedBy: approvedBy,
+        approvedAt: new Date(),
+        isAvailable: true
+      });
+      
       if (!doctor) {
         return res.status(404).json({ error: "Doctor not found" });
       }
@@ -512,7 +519,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doctorId = parseInt(req.params.id);
       const { rejectionReason } = req.body;
       
-      const doctor = await storage.rejectDoctor(doctorId, rejectionReason);
+      const doctor = await storage.updateDoctor(doctorId, {
+        status: "rejected",
+        rejectionReason: rejectionReason,
+        isAvailable: false
+      });
+      
       if (!doctor) {
         return res.status(404).json({ error: "Doctor not found" });
       }

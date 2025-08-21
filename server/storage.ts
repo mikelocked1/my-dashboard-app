@@ -99,8 +99,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
-    const result = await db.select().from(users).orderBy(desc(users.createdAt));
-    return result;
+    try {
+      const result = await this.db.select().from(users);
+      return result;
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+      throw error;
+    }
   }
 
   async updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined> {
@@ -110,11 +115,19 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(id: number): Promise<boolean> {
     try {
-      const result = await db.delete(users).where(eq(users.id, id));
-      return result.rowCount > 0;
+      // First delete related records
+      await this.db.delete(doctors).where(eq(doctors.userId, id));
+      await this.db.delete(healthData).where(eq(healthData.userId, id));
+      await this.db.delete(appointments).where(eq(appointments.patientId, id));
+      await this.db.delete(healthAlerts).where(eq(healthAlerts.userId, id));
+      await this.db.delete(aiHealthTips).where(eq(aiHealthTips.userId, id));
+
+      // Then delete the user
+      const result = await this.db.delete(users).where(eq(users.id, id));
+      return true;
     } catch (error) {
-      console.error('Error deleting user:', error);
-      return false;
+      console.error("Error deleting user:", error);
+      throw error;
     }
   }
 
@@ -826,7 +839,7 @@ export class MemoryStorage implements IStorage {
     this.appointments = this.appointments.filter(a => a.patientId !== id);
     this.healthAlerts = this.healthAlerts.filter(h => h.userId !== id);
     this.aiHealthTips = this.aiHealthTips.filter(t => t.userId !== id);
-    
+
     this.users.splice(userIndex, 1);
     return true;
   }

@@ -67,7 +67,7 @@ const Sidebar: React.FC = () => {
     if (item.href === "/health-analytics" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
     if (item.href === "/appointments" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
     if (item.href === "/reports" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
-    
+
     return true;
   });
 

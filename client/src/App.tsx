@@ -80,7 +80,6 @@ function getDashboardRoute(userProfile: any) {
       return "/doctor-dashboard";
     case "admin":
       return "/admin";
-    case "user":
     default:
       return "/dashboard";
   }
