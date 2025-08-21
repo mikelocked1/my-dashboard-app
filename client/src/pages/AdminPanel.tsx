@@ -113,6 +113,7 @@ const AdminPanel: React.FC = () => {
     queryKey: ["/api/admin/users"],
     queryFn: () => apiRequest("/api/admin/users"),
   });
+  const [showAddDoctor, setShowAddDoctor] = useState(false);
   const [formData, setFormData] = useState<NewDoctorFormData>({
     name: "",
     email: "",
