@@ -62,63 +62,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       education: string;
       languages: string;
     }
-  ): Promise<void> => {
+  ) => {
     try {
-      const { user: firebaseUser } = await mockAuth.createUserWithEmailAndPassword(email, password);
-      setCurrentUser(firebaseUser);
-
-      // Create user in database
-      const userData = {
-        firebaseUid: firebaseUser.uid,
-        email: firebaseUser.email!,
-        name,
-        role,
-      };
-
-      const response = await apiRequest("/api/users", {
+      const { user } = await mockAuth.createUserWithEmailAndPassword(email, password);
+      setCurrentUser(user);
+      
+      // Create user profile in our database
+      const response = await fetch("/api/users", {
         method: "POST",
-        body: JSON.stringify(userData),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firebaseUid: user.uid,
+          email: user.email,
+          name,
+          role,
+        }),
       });
-
-      if (!response.id) {
-        throw new Error("Failed to create user in database");
+      
+      if (!response.ok) {
+        throw new Error("Failed to create user profile");
       }
-
-      // If registering as a doctor with additional info, create/update doctor profile
+      
+      const userProfile = await response.json();
+      
+      // If registering as a doctor with additional info, create doctor profile
       if (role === "doctor" && doctorInfo) {
         const doctorData = {
-          userId: response.id,
+          userId: userProfile.id,
           specialty: doctorInfo.specialty,
           experience: doctorInfo.experience,
           consultationFee: doctorInfo.consultationFee,
           bio: doctorInfo.bio,
-          education: doctorInfo.education.split(',').map(edu => edu.trim()).filter(edu => edu),
-          languages: doctorInfo.languages.split(',').map(lang => lang.trim()).filter(lang => lang),
-          status: "pending",
-          isAvailable: false,
+          education: doctorInfo.education.split(",").map((e: string) => e.trim()),
+          languages: doctorInfo.languages.split(",").map((l: string) => l.trim()),
+          status: "pending", // Doctor needs admin approval
+          isAvailable: false, // Not available until approved
         };
 
-        try {
-          await apiRequest("/api/doctors", {
-            method: "POST",
-            body: JSON.stringify(doctorData),
-          });
-        } catch (doctorError) {
-          console.error("Failed to create doctor profile:", doctorError);
-          // Don't throw error here as user account was already created
+        const doctorResponse = await fetch("/api/doctors", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(doctorData),
+        });
+
+        if (!doctorResponse.ok) {
+          throw new Error("Failed to create doctor profile");
         }
       }
-
-      setUserProfile(response);
-
-    } catch (error: any) {
+      
+    } catch (error) {
       console.error("Error during registration:", error);
-      // If database creation fails, clean up the auth user
-      if (currentUser) {
-        await mockAuth.signOut();
-        setCurrentUser(null);
-      }
-      throw new Error(error.message || "Registration failed");
+      throw error;
     }
   };
 
@@ -131,7 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const unsubscribe = mockAuth.onAuthStateChanged((user) => {
       setCurrentUser(user);
-
+      
       if (user) {
         // Fetch or create user profile
         const fetchUserProfile = async () => {
@@ -140,7 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (response.ok) {
               const profile = await response.json();
               setUserProfile(profile);
-            } else if (response.status === 404) {
+            } else {
               // Create user profile if it doesn't exist
               const createResponse = await fetch("/api/users", {
                 method: "POST",
@@ -149,22 +147,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 },
                 body: JSON.stringify({
                   firebaseUid: user.uid,
-                  email: user.email || `${user.uid}@example.com`,
-                  name: user.displayName || user.email?.split('@')[0] || 'User',
-                  role: "user",
+                  email: user.email,
+                  name: user.displayName || user.email.split('@')[0],
+                  role: user.role || "user",
                 }),
               });
-
+              
               if (createResponse.ok) {
                 const newProfile = await createResponse.json();
                 setUserProfile(newProfile);
               } else {
-                console.error("Failed to create user profile");
                 setUserProfile(null);
               }
-            } else {
-              console.error("Failed to fetch user profile");
-              setUserProfile(null);
             }
           } catch (error) {
             console.error("Error fetching user profile:", error);
@@ -173,7 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setLoading(false);
           }
         };
-
+        
         fetchUserProfile();
       } else {
         setUserProfile(null);
