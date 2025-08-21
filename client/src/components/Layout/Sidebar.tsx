@@ -26,8 +26,8 @@ const Sidebar: React.FC = () => {
   const getNavigationByRole = () => {
     if (userProfile?.role === "admin") {
       return [
-        { name: "Admin Dashboard", href: "/", icon: Shield, key: "admin-dashboard" },
-        { name: "Doctor Approvals", href: "/admin?tab=doctors", icon: UserCheck, key: "doctor-approvals" },
+        { name: "Admin Dashboard", href: "/admin", icon: Shield, key: "admin-dashboard" },
+        { name: "Doctor Approvals", href: "/admin?tab=pending", icon: UserCheck, key: "doctor-approvals" },
         { name: "User Management", href: "/admin?tab=users", icon: Users, key: "user-management" },
         { name: "Settings", href: "/settings", icon: Settings, key: "admin-settings" },
       ];
@@ -46,8 +46,8 @@ const Sidebar: React.FC = () => {
     // Default patient navigation
     return [
       { name: "Dashboard", href: "/dashboard", icon: Home, key: "patient-dashboard" },
-      { name: "Health Data", href: "/health-data", icon: Activity, key: "health-data" },
-      { name: "Analytics", href: "/analytics", icon: TrendingUp, key: "analytics" },
+      { name: "Health Data Entry", href: "/health-data-entry", icon: Activity, key: "health-data" },
+      { name: "Analytics", href: "/health-analytics", icon: TrendingUp, key: "analytics" },
       { name: "Book Appointment", href: "/appointments", icon: Calendar, key: "appointments" },
       { name: "Reports", href: "/reports", icon: FileText, key: "reports" },
       { name: "Settings", href: "/settings", icon: Settings, key: "patient-settings" },
@@ -63,8 +63,8 @@ const Sidebar: React.FC = () => {
     if (item.href.startsWith("/doctor-dashboard") && userProfile?.role !== "doctor") return false;
     // Patient specific routes
     if (item.href === "/dashboard" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
-    if (item.href === "/health-data" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
-    if (item.href === "/analytics" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
+    if (item.href === "/health-data-entry" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
+    if (item.href === "/health-analytics" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
     if (item.href === "/appointments" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
     if (item.href === "/reports" && userProfile?.role !== "user" && userProfile?.role !== undefined) return false;
     
