@@ -2,17 +2,31 @@ import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCRpI3hfTNxX0QmEIRZJzAbZvq0ZtG8v3I",
-  authDomain: "health-compound.firebaseapp.com",
-  projectId: "health-compound",
-  storageBucket: "health-compound.firebasestorage.app",
-  messagingSenderId: "808721261273",
-  appId: "1:808721261273:web:c65762c1d14842488794c8",
-  measurementId: "G-L0QGXCZW8B",
-};
+// Check if Firebase configuration is provided via environment variables
+const useFirebase = import.meta.env.VITE_FIREBASE_API_KEY && 
+                   import.meta.env.VITE_FIREBASE_PROJECT_ID;
 
-// Initialize Firebase only if no apps exist (prevents duplicate app error during HMR)
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+const firebaseConfig = useFirebase ? {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+} : null;
+
+// Initialize Firebase only if configuration is available and no apps exist
+let auth: any = null;
+let db: any = null;
+
+if (firebaseConfig) {
+  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  auth = getAuth(app);
+  db = getFirestore(app);
+} else {
+  console.log('Firebase not configured - using mock authentication for development');
+}
+
+export { auth, db };
+export const isFirebaseConfigured = !!firebaseConfig;

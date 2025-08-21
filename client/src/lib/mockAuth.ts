@@ -8,22 +8,22 @@ export interface MockUser {
 
 export const mockUsers: MockUser[] = [
   {
-    uid: 'user1',
-    email: 'patient@example.com',
-    displayName: 'John Patient',
-    role: 'user'
+    uid: 'admin_uid_default',
+    email: 'admin@healthsync.com',
+    displayName: 'System Administrator',
+    role: 'admin'
   },
   {
-    uid: 'doctor1', 
-    email: 'doctor@example.com',
+    uid: 'dr-sarah-wilson-001',
+    email: 'dr.sarah.wilson@smartcare.com',
     displayName: 'Dr. Sarah Wilson',
     role: 'doctor'
   },
   {
-    uid: 'admin1',
-    email: 'admin@example.com', 
-    displayName: 'Admin User',
-    role: 'admin'
+    uid: 'patient_demo_001',
+    email: 'patient@demo.com',
+    displayName: 'Demo Patient',
+    role: 'user'
   }
 ];
 
