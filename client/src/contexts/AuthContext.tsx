@@ -49,18 +49,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         body: JSON.stringify({
           firebaseUid: user.uid,
-          email: user.email,
+          email: user.email || email,
           name,
           role,
         }),
       });
       
       if (!response.ok) {
-        throw new Error("Failed to create user profile");
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(errorData.error || "Failed to create user profile");
       }
-    } catch (error) {
+      
+      const userProfile = await response.json();
+      setUserProfile(userProfile);
+      
+    } catch (error: any) {
       console.error("Error during registration:", error);
-      throw error;
+      // If database creation fails, clean up the auth user
+      if (currentUser) {
+        await mockAuth.signOut();
+        setCurrentUser(null);
+      }
+      throw new Error(error.message || "Registration failed");
     }
   };
 
@@ -82,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (response.ok) {
               const profile = await response.json();
               setUserProfile(profile);
-            } else {
+            } else if (response.status === 404) {
               // Create user profile if it doesn't exist
               const createResponse = await fetch("/api/users", {
                 method: "POST",
@@ -91,9 +101,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 },
                 body: JSON.stringify({
                   firebaseUid: user.uid,
-                  email: user.email,
-                  name: user.displayName || user.email.split('@')[0],
-                  role: user.role || "user",
+                  email: user.email || `${user.uid}@example.com`,
+                  name: user.displayName || user.email?.split('@')[0] || 'User',
+                  role: "user",
                 }),
               });
               
@@ -101,8 +111,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const newProfile = await createResponse.json();
                 setUserProfile(newProfile);
               } else {
+                console.error("Failed to create user profile");
                 setUserProfile(null);
               }
+            } else {
+              console.error("Failed to fetch user profile");
+              setUserProfile(null);
             }
           } catch (error) {
             console.error("Error fetching user profile:", error);

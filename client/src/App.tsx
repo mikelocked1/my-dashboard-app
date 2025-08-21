@@ -18,6 +18,25 @@ import Settings from "@/pages/Settings";
 import AdminPanel from "@/pages/AdminPanel";
 import Header from "@/components/Layout/Header";
 import Sidebar from "@/components/Layout/Sidebar";
+import { ErrorBoundary } from "react-error-boundary";
+
+function ErrorFallback({ error }: { error: Error }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="text-center p-8">
+        <h1 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">{error.message}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Reload Page
+        </button>
+      </div>
+    </div>
+  );
+}
+
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { currentUser, loading } = useAuth();
@@ -160,16 +179,19 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AuthProvider>
+            <TooltipProvider>
+              <Router />
+              <Toaster />
+            </TooltipProvider>
+          </AuthProvider>
+        </ThemeProvider>
+        {/* Removed ReactQueryDevtools from here as it's better placed outside the ErrorBoundary if it's meant for debugging the entire app */}
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

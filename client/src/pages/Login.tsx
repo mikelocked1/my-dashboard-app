@@ -28,15 +28,36 @@ const Login: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate inputs
+    if (!loginEmail.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter your email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!loginPassword.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter your password.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
-      await login(loginEmail, loginPassword);
+      await login(loginEmail.trim(), loginPassword);
       toast({
         title: "Login Successful",
         description: "Welcome back to SmartCare!",
       });
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Login Failed",
         description: error.message || "Invalid email or password.",
@@ -49,15 +70,54 @@ const Login: React.FC = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate inputs
+    if (!registerName.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter your full name.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!registerEmail.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter your email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!registerPassword.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a password.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (registerPassword.length < 6) {
+      toast({
+        title: "Validation Error",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
-      await register(registerEmail, registerPassword, registerName, registerRole);
+      await register(registerEmail.trim(), registerPassword, registerName.trim(), registerRole);
       toast({
         title: "Registration Successful",
         description: "Your account has been created successfully!",
       });
     } catch (error: any) {
+      console.error("Registration error:", error);
       toast({
         title: "Registration Failed",
         description: error.message || "An error occurred during registration.",
