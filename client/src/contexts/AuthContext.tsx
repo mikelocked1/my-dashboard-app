@@ -67,6 +67,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { user } = await mockAuth.createUserWithEmailAndPassword(email, password);
       setCurrentUser(user);
       
+      // Determine final role - check for admin emails
+      let finalRole = role;
+      if (email === "admin@healthsync.com" || email.includes("admin")) {
+        finalRole = "admin";
+      }
+      
       // Create user profile in our database
       const response = await fetch("/api/users", {
         method: "POST",
@@ -77,15 +83,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           firebaseUid: user.uid,
           email: user.email,
           name,
-          role,
+          role: finalRole,
         }),
       });
       
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Failed to create user profile:", errorText);
         throw new Error("Failed to create user profile");
       }
       
       const userProfile = await response.json();
+      setUserProfile(userProfile);
       
       // If registering as a doctor with additional info, create doctor profile
       if (role === "doctor" && doctorInfo) {
@@ -110,6 +119,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         if (!doctorResponse.ok) {
+          const errorText = await doctorResponse.text();
+          console.error("Failed to create doctor profile:", errorText);
           throw new Error("Failed to create doctor profile");
         }
       }
@@ -139,6 +150,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const profile = await response.json();
               setUserProfile(profile);
             } else {
+              // Check if this user should be an admin based on email
+              let defaultRole = "user";
+              if (user.email === "admin@healthsync.com" || user.email?.includes("admin")) {
+                defaultRole = "admin";
+              }
+              
               // Create user profile if it doesn't exist
               const createResponse = await fetch("/api/users", {
                 method: "POST",
@@ -148,8 +165,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 body: JSON.stringify({
                   firebaseUid: user.uid,
                   email: user.email,
-                  name: user.displayName || user.email.split('@')[0],
-                  role: user.role || "user",
+                  name: user.displayName || user.email?.split('@')[0] || "User",
+                  role: user.role || defaultRole,
                 }),
               });
               
@@ -157,6 +174,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const newProfile = await createResponse.json();
                 setUserProfile(newProfile);
               } else {
+                const errorText = await createResponse.text();
+                console.error("Failed to create user profile:", errorText);
                 setUserProfile(null);
               }
             }
