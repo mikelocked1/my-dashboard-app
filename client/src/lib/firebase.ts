@@ -3,7 +3,7 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 // Check if Firebase configuration is provided via environment variables
-const useFirebase = import.meta.env.VITE_FIREBASE_API_KEY && 
+const useFirebase = import.meta.env.VITE_FIREBASE_API_KEY &&
                    import.meta.env.VITE_FIREBASE_PROJECT_ID;
 
 const firebaseConfig = useFirebase ? {
@@ -29,4 +29,16 @@ if (firebaseConfig) {
 }
 
 export { auth, db };
-export const isFirebaseConfigured = !!firebaseConfig;
+// Check if Firebase is configured
+export const isFirebaseConfigured = !!(
+  import.meta.env.VITE_FIREBASE_API_KEY &&
+  import.meta.env.VITE_FIREBASE_PROJECT_ID &&
+  import.meta.env.VITE_FIREBASE_APP_ID
+);
+
+console.log('Firebase Configuration Check:', {
+  apiKey: !!import.meta.env.VITE_FIREBASE_API_KEY,
+  projectId: !!import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  appId: !!import.meta.env.VITE_FIREBASE_APP_ID,
+  isConfigured: isFirebaseConfigured
+});
