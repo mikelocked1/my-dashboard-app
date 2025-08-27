@@ -1,5 +1,6 @@
 // knexfile.ts
 import type { Knex } from "knex";
+// No need to import PgPool or NeonPool directly since we'll use default pooling
 
 const common: Partial<Knex.Config> = {
   client: "pg",
@@ -7,20 +8,16 @@ const common: Partial<Knex.Config> = {
     tableName: "knex_migrations",
     directory: "./migrations",
   },
-  pool: { min: 0, max: 10 },
+  pool: { min: 0, max: 10 }, // Use default Knex pool settings
 };
 
 const config: { [key: string]: Knex.Config } = {
   development: {
     ...common,
-    // Use DATABASE_URL in dev if you want to test against the same DB as production.
-    // Otherwise fallback to a local DB string.
-    connection: process.env.DATABASE_URL || "postgres://localhost:5432/mydb",
+    connection: process.env.DATABASE_URL || "postgres://postgres:@localhost:5432/mydb",
   },
-
   production: {
     ...common,
-    // For Render (and many managed PGs) pass an object so we can set ssl properly:
     connection: {
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false },
@@ -29,4 +26,3 @@ const config: { [key: string]: Knex.Config } = {
 };
 
 export default config;
-

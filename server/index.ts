@@ -1,12 +1,14 @@
-import express, { type Request, Response, NextFunction } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
+import { createKnex } from "./knex"; // ✅ Import the async factory function
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Middleware: log API requests (unchanged)
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -38,6 +40,17 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // ✅ Test database connection before starting server
+  let knex: Awaited<ReturnType<typeof createKnex>>;
+  try {
+    knex = await createKnex(); // Await the async factory
+    await knex.raw("SELECT 1+1 AS result");
+    console.log("✅ Database connected successfully");
+  } catch (err) {
+    console.error("❌ Database connection failed:", err);
+    process.exit(1); // Stop server if DB is not connected
+  }
+
   // Initialize preloaded doctors if using in-memory storage
   if (process.env.NODE_ENV === "development") {
     await storage.seedPreloadedDoctors();
@@ -49,35 +62,27 @@ app.use((req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    // Log error for debugging
     console.error("Server error:", err);
 
-    // Send error response if not already sent
     if (!res.headersSent) {
       res.status(status).json({ message });
     }
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // Only setup Vite in development (unchanged)
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000");
-  // Kill any existing process on the port
-  process.on('SIGTERM', () => {
+
+  process.on("SIGTERM", () => {
     server.close();
   });
 
-  process.on('SIGINT', () => {
+  process.on("SIGINT", () => {
     server.close();
   });
 
