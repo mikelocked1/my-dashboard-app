@@ -5,6 +5,11 @@ import { db } from "./firebaseAdmin.js";
 const app = express();
 app.use(bodyParser.json());
 
+// ✅ Health check route (NEW)
+app.get("/", (req, res) => {
+  res.send("SmartCare Backend is running 🚀");
+});
+
 // Health data route
 app.post("/api/health-data", async (req, res) => {
   try {
